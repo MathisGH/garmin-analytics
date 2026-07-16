@@ -59,7 +59,7 @@ def create_schema(db_path):
             metric TEXT,
             timestamp INTEGER,
             value REAL,
-            FOREIGN KEY (date) REFERENCES daily_summary(date);
+            FOREIGN KEY (date) REFERENCES daily_summary(date),
             UNIQUE(date, metric, timestamp)
         )
     """)
@@ -112,3 +112,15 @@ def insert_timeseries(db_path, day_date, metric, points, time_key, value_key):
     connection.commit()
     connection.close()
     return len(rows)
+
+
+def is_day_already_extracted(db_path, day_date):
+    """Check if day_date has already been extracted to avoid duplication"""
+    connection = sqlite3.connect(db_path)
+    cursor = connection.cursor()
+    cursor.execute("SELECT extracted FROM daily_summary WHERE date = ?", (day_date,))
+    flag = cursor.fetchone() == 1
+    
+    connection.commit()
+    connection.close()
+    return flag
