@@ -33,8 +33,6 @@ def extract_day(client, db_path, day_date):
         "body_battery_highest": stats.get("bodyBatteryHighestValue"),
         "body_battery_lowest": stats.get("bodyBatteryLowestValue"),
         "body_battery_at_wake": stats.get("bodyBatteryAtWakeTime"),
-        "avg_spo2": stats.get("averageSpo2"),
-        "lowest_spo2": stats.get("lowestSpo2"),
         "avg_respiration": stats.get("avgWakingRespirationValue"),
     })
 
@@ -104,5 +102,7 @@ def extract_day(client, db_path, day_date):
         [{"t": p[0], "v": p[1]} for p in respiration_data.get("respirationValuesArray") or [] if p[1] is not None and p[1] >= 0],
         "t", "v",
     )
+
+    update_daily_summary(db_path, day_date, {"extracted": 1}) # acting like a flag to detect updated lines
 
     print(f"Extracted {day_date}: daily summary updated, {total_points} timeseries points")
