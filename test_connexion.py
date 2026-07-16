@@ -7,7 +7,7 @@ from garminconnect import (
 from dotenv import load_dotenv
 import os
 from datetime import date, timedelta
-from src.database import create_schema, insert_sleep_data, DB_PATH
+from src.database import create_schema, DB_PATH
 import json
 from pathlib import Path
 
@@ -92,35 +92,35 @@ def summarize(data, indent=0):
         if len(data):
             summarize(data[0], indent + 1)
 
-for method_name, args in METHODS:
+#for method_name, args in METHODS:
+#
+#    print("\n" + "=" * 80)
+#    print(method_name)
+#
+#    if not hasattr(client, method_name):
+#        print("Method not found.")
+#        continue
+#
+#    try:
+#        result = getattr(client, method_name)(*args)
+#
+#        with open(OUTPUT_DIR / f"{method_name}.json", "w") as f:
+#            json.dump(result, f, indent=2)
+#
+ #       print(type(result))
+#
+#        if isinstance(result, dict):
+#            print(f"Number of keys : {len(result)}")
+#            print(f"Top-level keys ({len(result)}):")
+#            print(list(result.keys()))
+ #       
+ #       elif isinstance(result, list):
+  #          print(f"Number of elements : {len(result)}")
 
-    print("\n" + "=" * 80)
-    print(method_name)
+   #     summarize(result)
 
-    if not hasattr(client, method_name):
-        print("Method not found.")
-        continue
-
-    try:
-        result = getattr(client, method_name)(*args)
-
-        with open(OUTPUT_DIR / f"{method_name}.json", "w") as f:
-            json.dump(result, f, indent=2)
-
-        print(type(result))
-
-        if isinstance(result, dict):
-            print(f"Number of keys : {len(result)}")
-            print(f"Top-level keys ({len(result)}):")
-            print(list(result.keys()))
-        
-        elif isinstance(result, list):
-            print(f"Number of elements : {len(result)}")
-
-        summarize(result)
-
-    except Exception as e:
-        print(f"ERROR : {e}")
+#    except Exception as e:
+#        print(f"ERROR : {e}")
 
 #heart_rate_data = client.get_heart_rates(today)
 #print("=== Heart Rate ===")
@@ -182,3 +182,12 @@ for method_name, args in METHODS:
 
 #sleep_data = client.get_sleep_data(date.today().isoformat())
 #insert_sleep_data(DB_PATH, sleep_data)
+
+from src.database import create_schema, DB_PATH
+from src.extract import extract_day
+from datetime import date
+
+create_schema(DB_PATH)
+
+today = date.today().isoformat()
+extract_day(client, DB_PATH, today)
