@@ -36,8 +36,6 @@ def create_schema(db_path):
             body_battery_highest INTEGER,
             body_battery_lowest INTEGER,
             body_battery_at_wake INTEGER,
-            avg_spo2 REAL,
-            lowest_spo2 REAL,
             avg_respiration REAL,
             sleep_score INTEGER,
             sleep_time_seconds INTEGER,
@@ -50,7 +48,8 @@ def create_schema(db_path):
             training_load_weekly REAL,
             training_status INTEGER,
             intensity_minutes_moderate INTEGER,
-            intensity_minutes_vigorous INTEGER
+            intensity_minutes_vigorous INTEGER,
+            extracted INTEGER DEFAULT 0
         )
     """)
 
@@ -60,7 +59,8 @@ def create_schema(db_path):
             metric TEXT,
             timestamp INTEGER,
             value REAL,
-            FOREIGN KEY (date) REFERENCES daily_summary(date)
+            FOREIGN KEY (date) REFERENCES daily_summary(date);
+            UNIQUE(date, metric, timestamp)
         )
     """)
 
@@ -106,7 +106,7 @@ def insert_timeseries(db_path, day_date, metric, points, time_key, value_key):
     connection = sqlite3.connect(db_path)
     cursor = connection.cursor()
     cursor.executemany(
-        "INSERT INTO timeseries_data (date, metric, timestamp, value) VALUES (?, ?, ?, ?)",
+        "INSERT OR IGNORE INTO timeseries_data (date, metric, timestamp, value) VALUES (?, ?, ?, ?)",
         rows,
     )
     connection.commit()
