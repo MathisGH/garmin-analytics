@@ -14,7 +14,7 @@ METRIC_SLEEP_STAGE = "sleep_stage"
 
 
 def create_schema(db_path):
-    """Create the database tables if they do not already exist."""
+    """Create the database tables if they do not already exist"""
     os.makedirs(os.path.dirname(db_path), exist_ok=True) # Create the directory if it does not already exist
 
     connection = sqlite3.connect(db_path)
