@@ -4,3 +4,4 @@ __pycache__/
 *.pyc
 data/
 test_outputs/
+data_exploration.ipynb
