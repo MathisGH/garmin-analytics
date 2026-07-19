@@ -50,18 +50,19 @@ def extract_day(client, db_path, day_date):
         })
         total_points += insert_timeseries(
             db_path, day_date, METRIC_SLEEP_MOVEMENT,
-            sleep_data.get("sleepMovement", []), "startGMT", "activityLevel",
+            sleep_data.get("sleepMovement") or [], "startGMT", "activityLevel",
         )
         total_points += insert_timeseries(
             db_path, day_date, METRIC_SLEEP_STAGE,
-            sleep_data.get("sleepLevels", []), "startGMT", "activityLevel",
+            sleep_data.get("sleepLevels") or [], "startGMT", "activityLevel",
         )
 
     # Training status: nested under a dynamic device ID, so we grab the first device found
     training = client.get_training_status(day_date)
-    vo2max = training.get("mostRecentVO2Max", {}).get("generic", {}).get("vo2MaxValue")
-    load_map = training.get("mostRecentTrainingLoadBalance", {}).get("metricsTrainingLoadBalanceDTOMap", {})
-    status_map = training.get("mostRecentTrainingStatus", {}).get("latestTrainingStatusData", {})
+    vo2max_generic = (training.get("mostRecentVO2Max") or {}).get("generic") or {}
+    vo2max = vo2max_generic.get("vo2MaxValue")
+    load_map = (training.get("mostRecentTrainingLoadBalance") or {}).get("metricsTrainingLoadBalanceDTOMap") or {}
+    status_map = (training.get("mostRecentTrainingStatus") or {}).get("latestTrainingStatusData") or {}
     first_load = next(iter(load_map.values()), {})
     first_status = next(iter(status_map.values()), {})
     update_daily_summary(db_path, day_date, {
