@@ -93,7 +93,7 @@ def extract_day(client, db_path, day_date):
     )
     total_points += insert_timeseries(
         db_path, day_date, METRIC_BODY_BATTERY,
-        [{"t": p[0], "v": p[1]} for p in stress_data.get("bodyBatteryValuesArray") or [] if p[1] is not None],
+        [{"t": p[0], "v": p[2]} for p in stress_data.get("bodyBatteryValuesArray") or [] if p[2] is not None],
         "t", "v",
     )
 
