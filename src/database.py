@@ -118,9 +118,7 @@ def is_day_already_extracted(db_path, day_date):
     """Check if day_date has already been extracted to avoid duplication"""
     connection = sqlite3.connect(db_path)
     cursor = connection.cursor()
-    cursor.execute("SELECT extracted FROM daily_summary WHERE date = ?", (day_date,))
-    flag = cursor.fetchone() == 1
-    
-    connection.commit()
+    cursor.execute("SELECT extracted FROM daily_summary WHERE date = ?", (day_date,))    
+    result = cursor.fetchone()
     connection.close()
-    return flag
+    return result is not None and result[0] == 1
