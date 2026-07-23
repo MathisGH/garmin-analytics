@@ -5,7 +5,7 @@ from datetime import timedelta, date
 import time
 
 start = date(2023, 10, 1) # Approximately the date when I started to wear my Garmin watch everyday
-end = date.today() - timedelta(days=1) # We don't want today's data because the day is not over yet -> incomplete data
+end = date.today()
 current = start
 all_dates = []
 
