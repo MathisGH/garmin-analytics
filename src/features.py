@@ -13,7 +13,7 @@ def build_daily_matrix(dates_str, connection):
     )
 
     if timeseries_data.empty:
-        print(f"Empty row for date: {dates_str}")
+        # print(f"Empty row for date: {dates_str}")
         return None
     
     timeseries_pivoted = timeseries_data.pivot_table(index="timestamp", columns="metric", values="value")
@@ -27,26 +27,26 @@ def build_daily_matrix(dates_str, connection):
     df.index = pd.to_datetime(df.index, unit="ms")
     df_resampled = df.resample("5min").mean()
 
-    # 4. FORCER LA GRILLE FIXE (Exactement 288 pas de 00:00 à 23:55)
+    # 4. In order to have the good shape for the grid (Exactly 288 steps from 00:00 to 23:55)
     day_start = pd.Timestamp(dates_str)
     fixed_grid = pd.date_range(start=day_start, periods=288, freq="5min")
     df_resampled = df_resampled.reindex(fixed_grid)
 
-    # 5. FILTRE QUALITÉ (Calculé SUR la grille fixe de 1152 points possibles)
-    # 288 lignes * 4 colonnes = 1152 valeurs. Si plus de 400 sont manquantes (~35%), on jette la journée.
+    # 5. Quality filter
+    # 288 rows * 4 columns = 1152 values. If more than 400 values are missing (~35%), we get rid of the entire day
     missing_count = df_resampled.isna().sum().sum()
     
     if missing_count > 400: # I keep 400 for the moment, the results are OK with that
-        print(f"Missing count:{missing_count} for date: {dates_str}")
+        # print(f"Missing count:{missing_count} for date: {dates_str}")
         return None
 
-    # 6. INTERPOLATION (Intérieur + bords)
+    # 6. INTERPOLATION (Inside and at the edges)
     for col in expected_metrics:
         df_resampled[col] = (
             df_resampled[col]
             .interpolate(method="linear")
-            .ffill()  # Prolonge la dernière valeur si le jour finit avant 23:55
-            .bfill()  # Copie la première valeur si le jour commence après 00:00
+            .ffill()  # In case the last value is before 23:55
+            .bfill()  # In case the first value is after 00:00
         )
 
     return df_resampled
