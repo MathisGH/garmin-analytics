@@ -1,8 +1,10 @@
+""" features.py -> transform raw data from the SQLite tables into clean dataframes"""
+
 
 from datetime import timedelta, date
-import time
 import pandas as pd
 import sqlite3
+import numpy as np
 
 
 def build_daily_matrix(dates_str, connection):
@@ -52,23 +54,32 @@ def build_daily_matrix(dates_str, connection):
     return df_resampled
 
 
-result = []
+def build_dataset(start_date, end_date, db_path):
 
-start = date(2026, 3, 20)
-end = date.today()
-current = start
+    result = []
+    current = start_date
+    all_dates = []
 
-connection = sqlite3.connect("data/garmin_data.db")
+    connection = sqlite3.connect(db_path)
 
-while current < end:
-    r = build_daily_matrix(current.isoformat(), connection)
-    if r is not None:
-        result.append([current, r])
-        
-    current = current + timedelta(days=1)
+    while current < end_date:
+        r = build_daily_matrix(current.isoformat(), connection)
+        if r is not None:
+            all_dates.append(current.isoformat())
+            result.append(r.values)
+            
+        current = current + timedelta(days=1)
 
-connection.close()
+    connection.close()
 
-lengths = [len(r) for _, r in result]
-print(min(lengths), max(lengths), len(set(lengths)))
-print(len(result))
+    final = np.stack(result, dtype=np.float32) # Conversion to float32, better for PyTorch
+
+    return final, all_dates
+
+if __name__ == "__main__":
+    start_date = date(2026, 3, 1)
+    end_date = date.today()
+    final, all_dates = build_dataset(start_date, end_date, "data/garmin_data.db")
+
+    print(final.shape)
+    print(final.dtype)
