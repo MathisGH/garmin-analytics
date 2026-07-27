@@ -1,3 +1,14 @@
+"""
+extract.py -- fetch and store one day of Garmin data.
+
+Goal: given an authenticated client and a date, pull every metric we keep
+(daily summary, sleep, training status, heart rate/stress/body battery/
+respiration timeseries) and persist it via database.py.
+
+How: one function, extract_day(), calling the relevant garminconnect
+endpoints and mapping their JSON fields onto the SQLite schema.
+"""
+
 from src.database import (
     DB_PATH,
     ensure_daily_row,

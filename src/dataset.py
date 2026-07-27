@@ -1,3 +1,15 @@
+"""
+dataset.py -- prepare the normalized train/val dataset for modeling.
+
+Goal: turn the raw (n_days, 288, 4) array from features.py into a
+chronologically split, per-channel normalized dataset ready to feed into
+a PyTorch Dataset later, saved to disk so it doesn't need rebuilding.
+
+How: build_dataset() from features.py -> chronological 85/15 train/val
+split by index -> per-channel z-score normalization (mean/std fit on
+train only) -> everything saved to data/dataset_normalized.npz.
+"""
+
 from features import build_dataset
 from datetime import date
 import numpy as np

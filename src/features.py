@@ -1,5 +1,14 @@
-""" features.py -> transform raw data from the SQLite tables into clean dataframes"""
+"""
+features.py -- turn raw SQLite timeseries into clean per-day matrices.
 
+Goal: for each date, produce a fixed-shape (288, 4) matrix (5-min grid x
+4 metrics), handling missing data and dropping days that are too
+incomplete, so downstream code always gets uniform daily "snapshots".
+
+How: build_daily_matrix() pivots + resamples one day onto a fixed
+calendar grid and interpolates gaps; build_dataset() loops this over a
+date range and stacks the results into one (n_days, 288, 4) array.
+"""
 
 from datetime import timedelta, date
 import pandas as pd

@@ -1,3 +1,14 @@
+"""
+backfill.py -- extract Garmin history into the local database.
+
+Goal: walk every day from the watch's start date to today and make sure
+each one is extracted exactly once, resumable across runs.
+
+How: loops over all dates, skips days already flagged 'extracted' in
+daily_summary, calls extract_day() for the rest, with a small delay
+between requests to stay under Garmin's rate limits.
+"""
+
 from src.auth import get_authenticated_client
 from src.database import create_schema, DB_PATH, is_day_already_extracted
 from src.extract import extract_day

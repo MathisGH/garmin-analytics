@@ -1,3 +1,13 @@
+"""
+auth.py -- authenticate against the Garmin Connect API.
+
+Goal: provide a reusable authenticated client for the rest of the
+pipeline (extract.py, backfill.py), without re-logging in on every run.
+
+How: tries to reuse cached session tokens from ~/.garminconnect first;
+falls back to email/password login (from .env) if no valid cache is found.
+"""
+
 from garminconnect import (
     Garmin,
     GarminConnectAuthenticationError,

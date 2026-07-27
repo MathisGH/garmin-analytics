@@ -1,3 +1,14 @@
+"""
+database.py -- SQLite schema and storage helpers.
+
+Goal: centralize all direct database access so no other script writes raw
+SQL of its own; defines the two tables (daily_summary, timeseries_data)
+and some helper functions used by extract.py and backfill.py.
+
+How: using sqlite3. Each helper opens and closes its own
+connection; metric name constants avoid typos across files.
+"""
+
 import sqlite3
 import os
 
