@@ -5,3 +5,5 @@ garth
 sqlite3
 pandas
 numpy
+sklearn
+mlflow
