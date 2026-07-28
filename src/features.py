@@ -85,6 +85,24 @@ def build_dataset(start_date, end_date, db_path):
 
     return final, all_dates
 
+
+# ----------------------------------------- #
+# ---Features for the scikit-learn model--- #
+# ----------------------------------------- #
+
+def build_tabular_features(array):
+
+    mean_vals = array.mean(axis=1)
+    std_vals = array.std(axis=1)
+    min_vals = array.min(axis=1)
+    max_vals = array.max(axis=1)
+
+    features = np.concatenate([mean_vals, std_vals, min_vals, max_vals], axis=1)
+
+    return features
+    
+
+
 if __name__ == "__main__":
     start_date = date(2026, 3, 1)
     end_date = date.today()

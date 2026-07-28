@@ -10,7 +10,7 @@ split by index -> per-channel z-score normalization (mean/std fit on
 train only) -> everything saved to data/dataset_normalized.npz.
 """
 
-from features import build_dataset
+from features import build_dataset, build_tabular_features
 from datetime import date
 import numpy as np
 from pathlib import Path
@@ -20,13 +20,17 @@ start_date = date(2026, 3, 1)
 end_date = date.today()
 final, all_dates = build_dataset(start_date, end_date, "data/garmin_data.db")
 
+final_features = build_tabular_features(final) # For the scikit-learn model
+
 # Train/test split
 cutoff = int(0.85*len(all_dates)) # 0.85 is arbitrary
 
 final_train = final[:cutoff]
+final_features_train = final_features[:cutoff]
 dates_train = all_dates[:cutoff]
 
 final_val = final[cutoff:]
+final_features_val = final_features[cutoff:]
 dates_val = all_dates[cutoff:]
 
 # Normalization
@@ -41,7 +45,8 @@ dates_val_array = np.array(dates_val)
 
 ARRAYS_PATH = Path("data")
 np.savez(file = ARRAYS_PATH / "dataset_normalized.npz", train = final_train_norm, val = final_val_norm,
-         dates_train = dates_train_array, dates_val = dates_val_array, mean = mean, std = std)
+         dates_train = dates_train_array, dates_val = dates_val_array, mean = mean, std = std, 
+         features_train = final_features_train, features_val = final_features_val)
 
 test = np.load(ARRAYS_PATH / "dataset_normalized.npz")
 print(test["train"].shape)
