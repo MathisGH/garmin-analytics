@@ -6,3 +6,4 @@ data/
 test_outputs/
 data_exploration.ipynb
 *.txt
+*.db
