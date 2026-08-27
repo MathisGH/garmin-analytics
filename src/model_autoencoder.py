@@ -7,10 +7,15 @@ Goal: Define and test the autoencoder architecture
 import torch
 import numpy as np
 from torch.utils.data import DataLoader
+import mlflow
 
 data = np.load("data/dataset_normalized.npz")
 train_array = data["train"]
-val_array = data["val"]
+eval_array = data["val"]
+
+mlflow.set_tracking_uri("sqlite:///mlflow.db") # mlflow ui --backend-store-uri sqlite:///mlflow.db
+mlflow.set_experiment("autoencoder")
+
 
 class GarminDataset(torch.utils.data.Dataset):
     def __init__(self, array):
@@ -22,10 +27,10 @@ class GarminDataset(torch.utils.data.Dataset):
         return torch.from_numpy(self.array[index])
 
 garmin_dataset1_train = GarminDataset(train_array)
-garmin_dataset1_val = GarminDataset(val_array)
+garmin_dataset1_eval = GarminDataset(eval_array)
 
 garmin_dataloader1_train = DataLoader(dataset=garmin_dataset1_train, batch_size=16, shuffle=True)
-garmin_dataloader1_val = DataLoader(dataset=garmin_dataset1_val, batch_size=16) # no shuffle needed for evaluation
+garmin_dataloader1_eval = DataLoader(dataset=garmin_dataset1_eval, batch_size=16) # no shuffle needed for evaluation
 
 
 class Autoencoder(torch.nn.Module):
@@ -50,27 +55,39 @@ class Autoencoder(torch.nn.Module):
         return result
 
 
-modele = Autoencoder()
+model = Autoencoder()
 loss_fn = torch.nn.MSELoss()
-optimizer = torch.optim.Adam(modele.parameters(), lr=0.001)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-
-for i in range(50): # 10 epochs
-    total_loss = 0
-    for batch in garmin_dataloader1_train:
-        optimizer.zero_grad()
-        sortie = modele(batch)
-        loss  = loss_fn(batch, sortie)
-        loss.backward()
-        optimizer.step()
-        total_loss += loss.item()
-
-    modele.eval()
-    with torch.no_grad():
-        val_loss = 0
-        for batch in garmin_dataloader1_val:
-            sortie = modele(batch)
+with mlflow.start_run():
+    mlflow.log_params({
+        "learning_rate": 0.001,
+        "batch_size": 16,
+        "n_epochs": 40,
+    })
+    for epoch in range(40): # 10 epochs
+        total_loss = 0
+        for batch in garmin_dataloader1_train:
+            optimizer.zero_grad()
+            sortie = model(batch)
             loss  = loss_fn(batch, sortie)
-            val_loss += loss.item()
-    print(f"eval loss -> {val_loss / len(garmin_dataloader1_val)}, and train loss -> {total_loss / len(garmin_dataloader1_train)}")
-    modele.train()
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item()
+        train_loss = total_loss / len(garmin_dataloader1_train)
+
+        model.eval()
+        with torch.no_grad():
+            eval_loss = 0
+            for batch in garmin_dataloader1_eval:
+                sortie = model(batch)
+                loss  = loss_fn(batch, sortie)
+                eval_loss += loss.item()
+        eval_loss = eval_loss / len(garmin_dataloader1_eval)
+
+        print(f"eval loss -> {eval_loss}, and train loss -> {train_loss}")
+
+        model.train()
+
+        mlflow.log_metric("train_loss", train_loss, step=epoch)
+        mlflow.log_metric("eval_loss", eval_loss, step=epoch)
