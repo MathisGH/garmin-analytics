@@ -10,6 +10,7 @@ from torch.utils.data import DataLoader
 
 data = np.load("data/dataset_normalized.npz")
 train_array = data["train"]
+val_array = data["val"]
 
 class GarminDataset(torch.utils.data.Dataset):
     def __init__(self, array):
@@ -20,10 +21,11 @@ class GarminDataset(torch.utils.data.Dataset):
     def __getitem__(self, index):
         return torch.from_numpy(self.array[index])
 
-garmin_dataset1 = GarminDataset(train_array)
+garmin_dataset1_train = GarminDataset(train_array)
+garmin_dataset1_val = GarminDataset(val_array)
 
-garmin_dataloader1 = DataLoader(dataset=garmin_dataset1, batch_size=16, shuffle=True)
-
+garmin_dataloader1_train = DataLoader(dataset=garmin_dataset1_train, batch_size=16, shuffle=True)
+garmin_dataloader1_val = DataLoader(dataset=garmin_dataset1_val, batch_size=16) # no shuffle needed for evaluation
 
 
 class Autoencoder(torch.nn.Module):
@@ -47,11 +49,28 @@ class Autoencoder(torch.nn.Module):
 
         return result
 
-modele = Autoencoder()
-for batch in garmin_dataloader1:
-    sortie = modele(batch)
-    print(batch.shape, sortie.shape)
-    break
 
+modele = Autoencoder()
 loss_fn = torch.nn.MSELoss()
 optimizer = torch.optim.Adam(modele.parameters(), lr=0.001)
+
+
+for i in range(50): # 10 epochs
+    total_loss = 0
+    for batch in garmin_dataloader1_train:
+        optimizer.zero_grad()
+        sortie = modele(batch)
+        loss  = loss_fn(batch, sortie)
+        loss.backward()
+        optimizer.step()
+        total_loss += loss.item()
+
+    modele.eval()
+    with torch.no_grad():
+        val_loss = 0
+        for batch in garmin_dataloader1_val:
+            sortie = modele(batch)
+            loss  = loss_fn(batch, sortie)
+            val_loss += loss.item()
+    print(f"eval loss -> {val_loss / len(garmin_dataloader1_val)}, and train loss -> {total_loss / len(garmin_dataloader1_train)}")
+    modele.train()
