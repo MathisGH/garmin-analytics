@@ -8,13 +8,7 @@ import torch
 import numpy as np
 from torch.utils.data import DataLoader
 import mlflow
-
-data = np.load("data/dataset_normalized.npz")
-train_array = data["train"]
-eval_array = data["val"]
-
-mlflow.set_tracking_uri("sqlite:///mlflow.db") # mlflow ui --backend-store-uri sqlite:///mlflow.db
-mlflow.set_experiment("autoencoder")
+import mlflow.pytorch
 
 
 class GarminDataset(torch.utils.data.Dataset):
@@ -25,12 +19,6 @@ class GarminDataset(torch.utils.data.Dataset):
         return len(self.array)
     def __getitem__(self, index):
         return torch.from_numpy(self.array[index])
-
-garmin_dataset1_train = GarminDataset(train_array)
-garmin_dataset1_eval = GarminDataset(eval_array)
-
-garmin_dataloader1_train = DataLoader(dataset=garmin_dataset1_train, batch_size=16, shuffle=True)
-garmin_dataloader1_eval = DataLoader(dataset=garmin_dataset1_eval, batch_size=16) # no shuffle needed for evaluation
 
 
 class Autoencoder(torch.nn.Module):
@@ -54,40 +42,58 @@ class Autoencoder(torch.nn.Module):
 
         return result
 
+if __name__ == "__main__":
+    data = np.load("data/dataset_normalized.npz")
+    train_array = data["train"]
+    eval_array = data["val"]
 
-model = Autoencoder()
-loss_fn = torch.nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    mlflow.set_tracking_uri("sqlite:///mlflow.db") # mlflow ui --backend-store-uri sqlite:///mlflow.db
+    mlflow.set_experiment("autoencoder")
 
-with mlflow.start_run():
-    mlflow.log_params({
-        "learning_rate": 0.001,
-        "batch_size": 16,
-        "n_epochs": 40,
-    })
-    for epoch in range(40): # 10 epochs
-        total_loss = 0
-        for batch in garmin_dataloader1_train:
-            optimizer.zero_grad()
-            sortie = model(batch)
-            loss  = loss_fn(batch, sortie)
-            loss.backward()
-            optimizer.step()
-            total_loss += loss.item()
-        train_loss = total_loss / len(garmin_dataloader1_train)
+    garmin_dataset1_train = GarminDataset(train_array)
+    garmin_dataset1_eval = GarminDataset(eval_array)
 
-        model.eval()
-        with torch.no_grad():
-            eval_loss = 0
-            for batch in garmin_dataloader1_eval:
+    garmin_dataloader1_train = DataLoader(dataset=garmin_dataset1_train, batch_size=16, shuffle=True)
+    garmin_dataloader1_eval = DataLoader(dataset=garmin_dataset1_eval, batch_size=16) # no shuffle needed for evaluation
+
+
+    model = Autoencoder()
+    loss_fn = torch.nn.MSELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+
+    with mlflow.start_run():
+        mlflow.log_params({
+            "learning_rate": 0.001,
+            "batch_size": 16,
+            "n_epochs": 40,
+        })
+        # Model training
+        for epoch in range(40): # 10 epochs
+            total_loss = 0
+            for batch in garmin_dataloader1_train:
+                optimizer.zero_grad()
                 sortie = model(batch)
                 loss  = loss_fn(batch, sortie)
-                eval_loss += loss.item()
-        eval_loss = eval_loss / len(garmin_dataloader1_eval)
+                loss.backward()
+                optimizer.step()
+                total_loss += loss.item()
+            train_loss = total_loss / len(garmin_dataloader1_train)
 
-        print(f"eval loss -> {eval_loss}, and train loss -> {train_loss}")
+            # Model evaluation
+            model.eval()
+            with torch.no_grad():
+                eval_loss = 0
+                for batch in garmin_dataloader1_eval:
+                    sortie = model(batch)
+                    loss  = loss_fn(batch, sortie)
+                    eval_loss += loss.item()
+            eval_loss = eval_loss / len(garmin_dataloader1_eval)
 
-        model.train()
+            print(f"eval loss -> {eval_loss}, and train loss -> {train_loss}")
 
-        mlflow.log_metric("train_loss", train_loss, step=epoch)
-        mlflow.log_metric("eval_loss", eval_loss, step=epoch)
+            model.train()
+
+            mlflow.log_metric("train_loss", train_loss, step=epoch)
+            mlflow.log_metric("eval_loss", eval_loss, step=epoch)
+
+        mlflow.pytorch.log_state_dict(model.state_dict(), artifact_path="model_state_dict")

@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import IsolationForest
 import mlflow
+import mlflow.sklearn
 
 data_loaded = np.load("data/dataset_normalized.npz")
 
@@ -21,13 +22,15 @@ mlflow.set_tracking_uri("sqlite:///mlflow.db") # mlflow ui --backend-store-uri s
 mlflow.set_experiment("isolation_forest_baseline")
 
 with mlflow.start_run():
-    if_model = IsolationForest(n_estimators=100, contamination=0.1)
+    if_model = IsolationForest(n_estimators=100, contamination=0.1, random_state=15)
     if_model.fit(features_train)
     score = if_model.score_samples(features_val)
 
     mlflow.log_param("n_estimators", 100)
     mlflow.log_param("contamination", 0.1)
+    mlflow.log_param("random_state", 15)
     mlflow.log_metric("mean_val_score", score.mean())
+    mlflow.sklearn.log_model(if_model, "model")
 
 d = {"dates":dates_val, "score":score}
 test = pd.DataFrame(d)
