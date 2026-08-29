@@ -68,6 +68,7 @@ with mlflow.start_run():
     df["rank_ae"] = df["score_ae"].rank(ascending=False)  # rank 1 = normal
 
     from scipy.stats import spearmanr
-    correlation, p_value = spearmanr(df["rank_if"], df["rank_ae"])
+    correlation, p_value = spearmanr(df["rank_if"], df["rank_ae"]) # Spearman because we compare the ranks
 
     mlflow.log_metric("spearman_correlation", correlation)
+    mlflow.log_metric("spearman_p_value", p_value)
