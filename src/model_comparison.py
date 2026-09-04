@@ -72,3 +72,5 @@ with mlflow.start_run():
 
     mlflow.log_metric("spearman_correlation", correlation)
     mlflow.log_metric("spearman_p_value", p_value)
+
+    df.to_csv("data/comparison_results.csv", index=False)
