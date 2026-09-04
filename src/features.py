@@ -109,4 +109,3 @@ if __name__ == "__main__":
     final, all_dates = build_dataset(start_date, end_date, "data/garmin_data.db")
 
     print(final.shape)
-    print(final.dtype)
