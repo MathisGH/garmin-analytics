@@ -21,7 +21,7 @@ from src.database import (
     METRIC_SLEEP_MOVEMENT,
     METRIC_SLEEP_STAGE,
 )
-
+import pandas as pd
 
 def extract_day(client, db_path, day_date):
     """Fetch and store all retained metrics for one day (format: 'YYYY-MM-DD')"""
@@ -59,13 +59,18 @@ def extract_day(client, db_path, day_date):
             "awake_sleep_seconds": daily_sleep.get("awakeSleepSeconds"),
             "body_battery_change": sleep_data.get("bodyBatteryChange"),
         })
+        def _to_epoch_ms(iso_str):
+            return int(pd.Timestamp(iso_str).timestamp() * 1000)
+
         total_points += insert_timeseries(
             db_path, day_date, METRIC_SLEEP_MOVEMENT,
-            sleep_data.get("sleepMovement") or [], "startGMT", "activityLevel",
+            [{"t": _to_epoch_ms(p["startGMT"]), "v": p["activityLevel"]} for p in sleep_data.get("sleepMovement") or []],
+            "t", "v",
         )
         total_points += insert_timeseries(
             db_path, day_date, METRIC_SLEEP_STAGE,
-            sleep_data.get("sleepLevels") or [], "startGMT", "activityLevel",
+            [{"t": _to_epoch_ms(p["startGMT"]), "v": p["activityLevel"]} for p in sleep_data.get("sleepLevels") or []],
+            "t", "v",
         )
 
     # Training status: nested under a dynamic device ID, so we grab the first device found
