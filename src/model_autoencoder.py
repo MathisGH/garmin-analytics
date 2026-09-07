@@ -68,7 +68,7 @@ if __name__ == "__main__":
             "n_epochs": 40,
         })
         # Model training
-        for epoch in range(40): # 10 epochs
+        for epoch in range(20):
             total_loss = 0
             for batch in garmin_dataloader1_train:
                 optimizer.zero_grad()

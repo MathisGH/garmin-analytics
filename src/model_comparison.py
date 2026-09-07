@@ -11,13 +11,13 @@ import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader
-from model_autoencoder import Autoencoder, GarminDataset
+from src.model_autoencoder import Autoencoder, GarminDataset
 
 mlflow.set_tracking_uri("sqlite:///mlflow.db") # mlflow ui --backend-store-uri sqlite:///mlflow.db
 mlflow.set_experiment("models_comparison")
 
-run_id_if = "39e9923ce74944019526cfe5983040d3"
-run_id_ae = "301696e089894314b5f8312a798b9e4b"
+run_id_if = "556c363237564704aea67f2ee3bffa06"
+run_id_ae = "1b87381d170a4d1ea7fbee74358b19c3"
 
 if_model = mlflow.sklearn.load_model(f"runs:/{run_id_if}/model")
 
