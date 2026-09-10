@@ -13,16 +13,18 @@ import torch
 from torch.utils.data import DataLoader
 from src.model_autoencoder import Autoencoder, GarminDataset
 
+COMPARISON_RESULT_PATH = "data/comparison_results.csv"
+
 mlflow.set_tracking_uri("sqlite:///mlflow.db") # mlflow ui --backend-store-uri sqlite:///mlflow.db
 mlflow.set_experiment("models_comparison")
 
-run_id_if = "556c363237564704aea67f2ee3bffa06"
-run_id_ae = "1b87381d170a4d1ea7fbee74358b19c3"
+RUN_ID_IF = "556c363237564704aea67f2ee3bffa06"
+RUN_ID_AE = "1b87381d170a4d1ea7fbee74358b19c3"
 
-if_model = mlflow.sklearn.load_model(f"runs:/{run_id_if}/model")
+if_model = mlflow.sklearn.load_model(f"runs:/{RUN_ID_IF}/model")
 
 ae_module = Autoencoder()
-state_dict = mlflow.pytorch.load_state_dict(f"runs:/{run_id_ae}/model_state_dict")
+state_dict = mlflow.pytorch.load_state_dict(f"runs:/{RUN_ID_AE}/model_state_dict")
 ae_module.load_state_dict(state_dict)
 ae_module.eval()
 
@@ -73,4 +75,4 @@ with mlflow.start_run():
     mlflow.log_metric("spearman_correlation", correlation)
     mlflow.log_metric("spearman_p_value", p_value)
 
-    df.to_csv("data/comparison_results.csv", index=False)
+    df.to_csv(COMPARISON_RESULT_PATH, index=False)
