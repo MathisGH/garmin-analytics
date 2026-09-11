@@ -8,3 +8,5 @@ numpy
 sklearn
 mlflow
 torch
+fastapi
+uvicorn
