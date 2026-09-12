@@ -109,8 +109,8 @@
             return `
                 <div style="border:1px solid #ddd; border-radius:8px; padding:12px; margin-bottom:10px;">
                     <strong>${date}</strong> — IF score: ${detail.score_if.toFixed(2)}, AE score: ${detail.score_ae_global.toFixed(4)}<br>
-                    <small><strong>Most deviating stats:</strong> ${topFeatures}</small><br>
-                    <small><strong>Reconstruction error (AE) by channel:</strong> ${channelErrors}</small>
+                    <small><strong>(IF) Most deviating stats:</strong> ${topFeatures}</small><br>
+                    <small><strong>(AE) Reconstruction error by channel:</strong> ${channelErrors}</small>
                 </div>
             `;
         }
