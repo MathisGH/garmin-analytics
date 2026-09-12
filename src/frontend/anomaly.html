@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Garmin Anomaly Explorer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+        body { font-family: sans-serif; max-width: 900px; margin: 40px auto; }
+        select { width: 100%; height: 200px; margin-bottom: 12px; }
+        button { padding: 8px 16px; cursor: pointer; margin-bottom: 20px; }
+        a.back-link { display: inline-block; margin-bottom: 16px; }
+        .metric-checkboxes { margin-bottom: 12px; }
+        .metric-checkboxes label { margin-right: 16px; }
+        canvas { max-width: 100%; }
+    </style>
+</head>
+<body>
+    <a class="back-link" href="index.html">&larr; Back to home</a>
+    <h1>Garmin Anomaly Explorer</h1>
+
+    <label for="day-select">Select one or more days (Ctrl/Cmd + click for multi-select):</label>
+    <select id="day-select" multiple></select>
+
+    <div class="metric-checkboxes">
+        <strong>Metrics:</strong>
+        <label><input type="checkbox" value="heart_rate" checked> Heart rate</label>
+        <label><input type="checkbox" value="stress"> Stress</label>
+        <label><input type="checkbox" value="body_battery"> Body battery</label>
+        <label><input type="checkbox" value="respiration"> Respiration</label>
+    </div>
+
+    <button id="show-btn">Show</button>
+
+    <canvas id="chart-canvas" height="100"></canvas>
+    <div id="explanations"></div>
+
+    <script>
+        const API_BASE = "http://127.0.0.1:8000";
+        const selectElement = document.getElementById("day-select");
+        const showButton = document.getElementById("show-btn");
+        const canvas = document.getElementById("chart-canvas");
+
+        let chartInstance = null;  // keep a reference so we can destroy it before redrawing
+
+        // Build the 288 time labels for one day: "00:00", "00:05", ..., "23:55"
+        function buildTimeLabels() {
+            const labels = [];
+            for (let i = 0; i < 288; i++) {
+                const totalMinutes = i * 5;
+                const hh = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
+                const mm = String(totalMinutes % 60).padStart(2, "0");
+                labels.push(`${hh}:${mm}`);
+            }
+            return labels;
+        }
+        const TIME_LABELS = buildTimeLabels();
+
+        // A distinct color per day, cycled if more days than colors
+        const COLORS = ["#e63946", "#457b9d", "#2a9d8f", "#f4a261", "#9b5de5", "#264653"];
+
+        async function loadDays() {
+            try {
+                const response = await fetch(`${API_BASE}/days`);
+                if (!response.ok) throw new Error(`API error: ${response.status}`);
+                const daysData = await response.json();
+                for (const [date, scores] of Object.entries(daysData)) {
+                    const option = document.createElement("option");
+                    option.value = date;
+                    option.textContent = `${date} (IF: ${scores.score_if.toFixed(2)}, AE: ${scores.score_ae_global.toFixed(3)})`;
+                    selectElement.appendChild(option);
+                }
+            } catch (err) {
+                console.error("Failed to load days:", err);
+            }
+        }
+
+        async function fetchDayDetail(date) {
+            const response = await fetch(`${API_BASE}/days/${date}`);
+            if (!response.ok) throw new Error(`API error for ${date}: ${response.status}`);
+            return response.json();
+        }
+        
+        // Human-readable labels for the 16 tabular features
+        const FEATURE_LABELS = {
+            mean_body_battery: "Body battery (mean)", mean_heart_rate: "Heart rate (mean)",
+            mean_respiration: "Respiration (mean)", mean_stress: "Stress (mean)",
+            std_body_battery: "Body battery (std)", std_heart_rate: "Heart rate (std)",
+            std_respiration: "Respiration (std)", std_stress: "Stress (std)",
+            min_body_battery: "Body battery (min)", min_heart_rate: "Heart rate (min)",
+            min_respiration: "Respiration (min)", min_stress: "Stress (min)",
+            max_body_battery: "Body battery (max)", max_heart_rate: "Heart rate (max)",
+            max_respiration: "Respiration (max)", max_stress: "Stress (max)",
+        };
+
+        function buildExplanationCard(date, detail) {
+            // Top 3 tabular features furthest from the training-set normal (by absolute z-score)
+            const topFeatures = Object.entries(detail.z_scores)
+                .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+                .slice(0, 3)
+                .map(([key, z]) => `${FEATURE_LABELS[key] || key}: z = ${z.toFixed(2)}`)
+                .join(" &nbsp;|&nbsp; ");
+
+            // Per-channel AE reconstruction error, worst first
+            const channelErrors = Object.entries(detail.score_ae_by_channel)
+                .sort((a, b) => b[1] - a[1])
+                .map(([channel, err]) => `${channel}: ${err.toFixed(4)}`)
+                .join(" &nbsp;|&nbsp; ");
+
+            return `
+                <div style="border:1px solid #ddd; border-radius:8px; padding:12px; margin-bottom:10px;">
+                    <strong>${date}</strong> — IF score: ${detail.score_if.toFixed(2)}, AE score: ${detail.score_ae_global.toFixed(4)}<br>
+                    <small><strong>Most deviating stats:</strong> ${topFeatures}</small><br>
+                    <small><strong>Reconstruction error (AE) by channel:</strong> ${channelErrors}</small>
+                </div>
+            `;
+        }
+
+        showButton.addEventListener("click", async () => {
+            const selectedDates = Array.from(selectElement.selectedOptions).map(o => o.value);
+            const selectedMetrics = Array.from(document.querySelectorAll(".metric-checkboxes input:checked")).map(cb => cb.value);
+
+            if (selectedDates.length === 0 || selectedMetrics.length === 0) {
+                alert("Please select at least one day and one metric.");
+                return;
+            }
+
+            // Fetch full detail (including raw_series) for every selected day
+            const dayDetails = await Promise.all(selectedDates.map(fetchDayDetail));
+
+            // One dataset per (day, metric) combination
+            const datasets = [];
+            dayDetails.forEach((detail, dayIndex) => {
+                selectedMetrics.forEach((metric, metricIndex) => {
+                    datasets.push({
+                        label: `${selectedDates[dayIndex]} - ${metric}`,
+                        data: detail.raw_series[metric],
+                        borderColor: COLORS[(dayIndex * selectedMetrics.length + metricIndex) % COLORS.length],
+                        borderWidth: 1.5,
+                        pointRadius: 0,  // no dots, just the line -- 288 points would be unreadable otherwise
+                        tension: 0.1,
+                    });
+                });
+            });
+
+            const explanationsDiv = document.getElementById("explanations");
+            explanationsDiv.innerHTML = dayDetails
+                .map((detail, i) => buildExplanationCard(selectedDates[i], detail))
+                .join("");
+
+            // Destroy the previous chart before drawing a new one, or Chart.js errors on canvas reuse
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+            chartInstance = new Chart(canvas, {
+                type: "line",
+                data: { labels: TIME_LABELS, datasets: datasets },
+                options: {
+                    responsive: true,
+                    interaction: { mode: "index", intersect: false },
+                    scales: {
+                        x: { ticks: { maxTicksLimit: 12 } },  // avoid cramming 288 labels on the axis
+                    },
+                },
+            });
+        });
+
+        loadDays();
+    </script>
+</body>
+</html>
