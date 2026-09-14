@@ -24,9 +24,21 @@ app.add_middleware(
 )
 #########
 
-with open("data/scores_precomputed.json", 'r') as file:
-    data = json.load(file)
+## Local version *start* ##
+#with open("data/scores_precomputed.json", 'r') as file:
+#    data = json.load(file)
+## Local version *end* ##
 
+## AWS with S3 version *start* ##
+import boto3
+
+S3_BUCKET = "garmin-anomaly-mathisdurand-2026"
+S3_KEY = "scores_precomputed.json"
+
+s3_client = boto3.client("s3")
+response = s3_client.get_object(Bucket=S3_BUCKET, Key=S3_KEY)
+data = json.loads(response["Body"].read())
+## AWS with S3 version *end* ##
 
 @app.get("/days/{day_date}") # Date format : YYYY-MM-DD
 def get_data(day_date: str) -> dict:
