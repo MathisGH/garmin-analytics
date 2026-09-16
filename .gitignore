@@ -8,3 +8,4 @@ data_exploration.ipynb
 *.txt
 *.db
 mlruns/
+*.zip
