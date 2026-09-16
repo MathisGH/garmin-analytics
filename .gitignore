@@ -8,4 +8,5 @@ data_exploration.ipynb
 *.txt
 *.db
 mlruns/
-*.zip
+deployment.zip
+lambda_package/
