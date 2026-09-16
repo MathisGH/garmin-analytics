@@ -55,3 +55,7 @@ def list_days() -> dict:
         }
         for day, entry in data.items()
     }
+
+from mangum import Mangum
+
+handler = Mangum(app, lifespan="off", api_gateway_base_path="/") # lifespan=off et api_gateway_base_path="/" : pour éviter certains problèmes ?
