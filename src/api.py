@@ -13,7 +13,7 @@ import json
 
 app = FastAPI()
 
-######## à décrire à quoi ça sert très rapidement
+######## adding the CORS headers for the Lambda response to the browser
 from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
