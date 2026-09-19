@@ -30,6 +30,25 @@ FEATURE_NAMES = ['mean_body_battery', 'mean_heart_rate', 'mean_respiration', 'me
                  'min_body_battery', 'min_heart_rate', 'min_respiration', 'min_stress',
                  'max_body_battery', 'max_heart_rate', 'max_respiration', 'max_stress',]   # exact order of each 16 columns in features_full
 
+# Defining a reusable function:
+def score_day(i, day_date, score_if_full, scores_ae_global, scores_ae_channel, z_scores_full, raw_real_full):
+    """
+    Build the result dict for one day, given the batch-computed arrays
+    (indexed by i) already produced in __main__.
+    """
+    return {
+        "score_if": float(score_if_full[i]),
+        "score_ae_global": float(scores_ae_global[i]),
+        "score_ae_by_channel": dict(zip(CHANNEL_NAMES, scores_ae_channel[i].tolist())),
+        "z_scores": dict(zip(FEATURE_NAMES, z_scores_full[i].tolist())),
+        "raw_series": {
+            ch: raw_real_full[i, :, c].tolist()
+            for c, ch in enumerate(CHANNEL_NAMES)
+        },
+    }
+
+
+
 if __name__ == "__main__":
     # Data
     data_loaded = np.load("data/dataset_normalized.npz")
@@ -49,6 +68,8 @@ if __name__ == "__main__":
     mean = data_loaded["mean"]
     std = data_loaded["std"]
 
+    norm_stats_list = [mean, std] # For the score_day function
+
     # Models
 
     if_model = mlflow.sklearn.load_model(f"runs:/{RUN_ID_IF}/model")
@@ -57,6 +78,8 @@ if __name__ == "__main__":
     state_dict = mlflow.pytorch.load_state_dict(f"runs:/{RUN_ID_AE}/model_state_dict")
     ae_module.load_state_dict(state_dict)
     ae_module.eval()
+
+    models_list = [if_model, ae_module] # For the score_day function
 
     # Scores
     score_if_full = if_model.score_samples(features_full)
@@ -86,17 +109,7 @@ if __name__ == "__main__":
 
     results = {}
     for i, day_date in enumerate(dates_full):
-        results[str(day_date)] = {
-            "score_if": float(score_if_full[i]),
-            "score_ae_global": float(scores_ae_global[i]),
-            "score_ae_by_channel": dict(zip(CHANNEL_NAMES, scores_ae_channel[i].tolist())),
-            "z_scores": dict(zip(FEATURE_NAMES, z_scores_full[i].tolist())),
-            "raw_series": {
-                ch: raw_real_full[i, :, c].tolist()
-                for c, ch in enumerate(CHANNEL_NAMES)
-            },
-        }
-
+        results[str(day_date)] = score_day(i, day_date, score_if_full, scores_ae_global, scores_ae_channel, z_scores_full, raw_real_full)
 
     with open(OUTPUT_PATH, "w") as f:
         json.dump(results, f, indent=2)
