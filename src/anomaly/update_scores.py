@@ -19,8 +19,8 @@ import json
 import boto3
 
 from src.features import build_dataset, build_tabular_features
-from src.model_autoencoder import Autoencoder, GarminDataset
-from src.precompute_scores import score_day, RUN_ID_IF, RUN_ID_AE, OUTPUT_PATH
+from src.anomaly.model_autoencoder import Autoencoder, GarminDataset
+from src.anomaly.precompute_scores import score_day, RUN_ID_IF, RUN_ID_AE, OUTPUT_PATH
 
 DB_PATH = "data/garmin_data.db"
 mlflow.set_tracking_uri("sqlite:///mlflow.db")

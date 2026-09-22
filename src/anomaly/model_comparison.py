@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader
-from src.model_autoencoder import Autoencoder, GarminDataset
+from src.anomaly.model_autoencoder import Autoencoder, GarminDataset
 
 COMPARISON_RESULT_PATH = "data/comparison_results.csv"
 

@@ -12,7 +12,7 @@ import pandas as pd
 import mlflow
 import torch
 from torch.utils.data import DataLoader
-from src.model_autoencoder import Autoencoder, GarminDataset
+from src.anomaly.model_autoencoder import Autoencoder, GarminDataset
 import json
 
 

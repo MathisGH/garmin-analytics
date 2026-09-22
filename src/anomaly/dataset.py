@@ -1,5 +1,5 @@
 """
-dataset.py -- prepare the normalized train/val dataset for modeling.
+dataset.py -- prepare the normalized train/val dataset for modeling (only for anomaly detection).
 
 Goal: turn the raw (n_days, 288, 4) array from features.py into a
 chronologically split, per-channel normalized dataset ready to feed into
