@@ -10,7 +10,7 @@ split by index -> per-channel z-score normalization (mean/std fit on
 train only) -> everything saved to data/dataset_normalized.npz.
 """
 
-from src.features import build_dataset, build_tabular_features
+from src.anomaly.anomaly_features import build_dataset, build_tabular_features
 from datetime import date
 import numpy as np
 from pathlib import Path
