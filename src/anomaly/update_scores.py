@@ -18,7 +18,7 @@ import json
 
 import boto3
 
-from src.features import build_dataset, build_tabular_features
+from src.anomaly.anomaly_features import build_dataset, build_tabular_features
 from src.anomaly.model_autoencoder import Autoencoder, GarminDataset
 from src.anomaly.precompute_scores import score_day, RUN_ID_IF, RUN_ID_AE, OUTPUT_PATH
 
