@@ -9,4 +9,6 @@ data_exploration.ipynb
 *.db
 mlruns/
 deployment.zip
+*.zip
 lambda_package/
+tests.py
