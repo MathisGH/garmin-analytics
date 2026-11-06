@@ -30,6 +30,7 @@ RF_PARAMS = {"n_estimators": 300, "min_samples_leaf": 20, "max_features": 0.6,
 ACCUMULATION_MARKERS = ("_ema", "_acwr")
 STAGES = ["deep", "light", "rem", "awake"]
 OUTPUT_PATH = Path("data/sleep_model_comparison.csv")
+STAGE_TARGETS = tuple(f"{stage}_sleep_ratio" for stage in STAGES)
 
 
 def make_ridge():
@@ -61,6 +62,11 @@ def build_targets(effects, effect_metrics):
     return targets
 
 
+def build_valid_stage_mask(effects, effect_metrics):
+    """True for nights where deep, REM and awake are all > 0 (likely correctly measured)."""
+    cols = [effect_metrics.index(f"{s}_sleep_seconds") for s in ("deep", "rem", "awake")]
+    return (effects[:, cols] > 0).all(axis=1)
+
 if __name__ == "__main__":
     data_loaded = np.load("data/sleep_dataset_normalized.npz")
 
@@ -77,16 +83,22 @@ if __name__ == "__main__":
     }
 
     targets = build_targets(effects, effect_metrics)
+    stage_mask = build_valid_stage_mask(effects, effect_metrics)
+    print(f"Nights kept for stage targets: {stage_mask.sum()}/{len(stage_mask)}")
     models = build_models()
     cv = TimeSeriesSplit(n_splits=N_SPLITS)
 
     rows = []
     for target_name, y in targets.items():
         print(f"Evaluating target: {target_name}")
+        if target_name in STAGE_TARGETS:
+            X_t, y_t = X[stage_mask], y[stage_mask]
+        else:
+            X_t, y_t = X, y
         fold_mae = {}
         for model_name, (estimator, feature_set) in models.items():
             scores = cross_val_score(
-                estimator, X[:, feature_sets[feature_set]], y,
+                estimator, X_t[:, feature_sets[feature_set]], y_t,
                 cv=cv, scoring="neg_mean_absolute_error",
             )
             fold_mae[model_name] = -scores  # one MAE per fold

@@ -15,7 +15,7 @@ from src.extract import extract_day
 from datetime import timedelta, date
 import time
 
-start = date(2023, 10, 1) # Approximately the date when I started to wear my Garmin watch everyday
+start = date(2023, 10, 1) # Approximately the date when I started to wear my Garmin watch (almost) everyday
 end = date.today()
 current = start
 all_dates = []

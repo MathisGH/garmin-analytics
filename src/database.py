@@ -3,7 +3,7 @@ database.py -- SQLite schema and storage helpers.
 
 Goal: centralize all direct database access so no other script writes raw
 SQL of its own; defines the two tables (daily_summary, timeseries_data)
-and some helper functions used by extract.py and backfill.py.
+and some helper functions.
 
 How: using sqlite3. Each helper opens and closes its own
 connection; metric name constants avoid typos across files.
@@ -14,14 +14,13 @@ import os
 
 DB_PATH = os.path.join("data", "garmin_data.db")
 
-# Constants for metric names, to avoid typos like "Heart_Rate" vs "heart_rate"
+# Constants for metric names
 METRIC_HEART_RATE = "heart_rate"
 METRIC_STRESS = "stress"
 METRIC_BODY_BATTERY = "body_battery"
 METRIC_RESPIRATION = "respiration"
 METRIC_SLEEP_MOVEMENT = "sleep_movement"
 METRIC_SLEEP_STAGE = "sleep_stage"
-
 
 
 def create_schema(db_path):

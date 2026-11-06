@@ -12,13 +12,51 @@
         .metric-checkboxes { margin-bottom: 12px; }
         .metric-checkboxes label { margin-right: 16px; }
         canvas { max-width: 100%; }
+        .muted { color: #555; }
+        .note { background: #f7f7f7; border-left: 4px solid #bbb; padding: 10px 14px; margin: 12px 0; font-size: 0.95em; }
+        .note ul { margin: 6px 0 0 0; padding-left: 20px; }
+        .note li { margin-bottom: 4px; }
+
+        /* Level badges (shared by the legend and the day cards) */
+        .badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 0.85em; font-weight: bold; color: #fff; }
+        .badge-normal { background: #2a9d8f; }
+        .badge-unusual { background: #e9a23b; }
+        .badge-very { background: #e63946; }
+
+        /* Position of a day among all days: green = typical, orange/red = extreme end of the history */
+        .rank-bar { position: relative; height: 10px; border-radius: 5px; margin: 6px 0 2px 0;
+            background: linear-gradient(to right, #2a9d8f 0%, #2a9d8f 85%, #e9a23b 85%, #e9a23b 95%, #e63946 95%, #e63946 100%); }
+        .rank-marker { position: absolute; top: -3px; width: 4px; height: 16px; background: #222; border-radius: 2px; transform: translateX(-2px); }
+        .model-row { margin-top: 10px; }
+        .day-card { border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
     <a class="back-link" href="index.html">&larr; Back to home</a>
     <h1>Garmin Anomaly Explorer</h1>
+    <p class="muted" id="intro">Loading...</p>
 
-    <label for="day-select">Select one or more days (Ctrl/Cmd + click for multi-select):</label>
+    <div class="note">
+        <strong>How to read this page</strong>
+        <ul>
+            <li>Two models look at each day of my watch data (heart rate, stress, body battery, respiration) and ask:
+                <em>"does this day look like my usual days?"</em></li>
+            <li><strong>IF</strong> (Isolation Forest) works on 16 daily statistics (mean, std, min, max of each metric).
+                <strong>AE</strong> (Autoencoder) works on the full 5-minute curves.</li>
+            <li>Scores have no unit and no medical meaning on their own. A day is flagged by comparing it to <em>all my other days</em>:</li>
+        </ul>
+        <p style="margin: 8px 0 0 0;">
+            <span class="badge badge-normal">Normal</span> among the 85 % most typical days &nbsp;
+            <span class="badge badge-unusual">Unusual</span> among the 15 % most extreme days &nbsp;
+            <span class="badge badge-very">Very unusual</span> among the 5 % most extreme days
+        </p>
+        <p style="margin: 8px 0 0 0;" class="muted">
+            By construction, about 15 % of days are flagged whatever happens, so "unusual" means "different from my own
+            habits", not "unhealthy". The two models do not always agree: that is expected on such a small dataset.
+        </p>
+    </div>
+
+    <label for="day-select">Select one or more days (Ctrl/Cmd + click for multi-select). Days marked ⚠ are flagged by at least one model:</label>
     <select id="day-select" multiple></select>
 
     <div class="metric-checkboxes">
@@ -41,8 +79,39 @@
         const canvas = document.getElementById("chart-canvas");
 
         let chartInstance = null;  // keep a reference so we can destroy it before redrawing
+        let allDays = {};          // {date: {score_if, score_ae_global}}, filled by loadDays()
 
-        // Build the 288 time labels for one day: "00:00", "00:05", ..., "23:55"
+        // ---------- Anomaly levels ----------
+        // Isolation Forest uses sklearn's score_samples(): the LOWER the score, the more abnormal the day.
+        // Set to false if the scores shown in the list are such that higher = more abnormal.
+        const IF_LOWER_IS_MORE_ANOMALOUS = true;
+
+        // Autoencoder score = reconstruction error: the HIGHER, the more abnormal.
+        // Thresholds are percentiles of the history (no absolute threshold exists for these scores).
+        const LEVELS = [
+            { name: "Very unusual", css: "badge-very", minPercentile: 0.95, rank: 2 },
+            { name: "Unusual", css: "badge-unusual", minPercentile: 0.85, rank: 1 },
+            { name: "Normal", css: "badge-normal", minPercentile: 0, rank: 0 },
+        ];
+
+        // Convert a raw score into "abnormality" so that higher always means more abnormal
+        function abnormality(model, value) {
+            return model === "if" && IF_LOWER_IS_MORE_ANOMALOUS ? -value : value;
+        }
+
+        // Share of days that are less abnormal than (or as abnormal as) this one, between 0 and 1
+        function percentileOf(model, value) {
+            const key = model === "if" ? "score_if" : "score_ae_global";
+            const target = abnormality(model, value);
+            const values = Object.values(allDays).map(d => abnormality(model, d[key]));
+            return values.filter(v => v <= target).length / values.length;
+        }
+
+        function levelOf(percentile) {
+            return LEVELS.find(level => percentile >= level.minPercentile);
+        }
+
+        // Build the time labels for one day: "00:00", "00:05", ..., "23:55" (288 points)
         function buildTimeLabels() {
             const labels = [];
             for (let i = 0; i < 288; i++) {
@@ -62,15 +131,27 @@
             try {
                 const response = await fetch(`${API_BASE}/days`);
                 if (!response.ok) throw new Error(`API error: ${response.status}`);
-                const daysData = await response.json();
-                for (const [date, scores] of Object.entries(daysData)) {
+                allDays = await response.json();
+
+                let flaggedCount = 0;
+                for (const [date, scores] of Object.entries(allDays)) {
+                    const levelIf = levelOf(percentileOf("if", scores.score_if));
+                    const levelAe = levelOf(percentileOf("ae", scores.score_ae_global));
+                    const worst = Math.max(levelIf.rank, levelAe.rank);
+                    if (worst > 0) flaggedCount++;
+
+                    const flag = worst === 2 ? " ⚠⚠" : worst === 1 ? " ⚠" : "";
                     const option = document.createElement("option");
                     option.value = date;
-                    option.textContent = `${date} (IF: ${scores.score_if.toFixed(2)}, AE: ${scores.score_ae_global.toFixed(3)})`;
+                    option.textContent = `${date} (IF: ${scores.score_if.toFixed(2)}, AE: ${scores.score_ae_global.toFixed(3)})${flag}`;
                     selectElement.appendChild(option);
                 }
+                document.getElementById("intro").textContent =
+                    `${Object.keys(allDays).length} days analysed, ${flaggedCount} flagged by at least one model. ` +
+                    `Pick a day to see its curves and why it was (or was not) flagged.`;
             } catch (err) {
                 console.error("Failed to load days:", err);
+                document.getElementById("intro").textContent = `Could not load days: ${err.message}`;
             }
         }
 
@@ -79,7 +160,7 @@
             if (!response.ok) throw new Error(`API error for ${date}: ${response.status}`);
             return response.json();
         }
-        
+
         // Human-readable labels for the 16 tabular features
         const FEATURE_LABELS = {
             mean_body_battery: "Body battery (mean)", mean_heart_rate: "Heart rate (mean)",
@@ -91,6 +172,19 @@
             max_body_battery: "Body battery (max)", max_heart_rate: "Heart rate (max)",
             max_respiration: "Respiration (max)", max_stress: "Stress (max)",
         };
+
+        // One row per model: badge + position bar showing where the day sits among all days
+        function buildModelRow(title, model, value, decimals) {
+            const percentile = percentileOf(model, value);
+            const level = levelOf(percentile);
+            return `
+                <div class="model-row">
+                    <strong>${title}</strong> &nbsp;
+                    <span class="badge ${level.css}">${level.name}</span>
+                    <small class="muted"> score ${value.toFixed(decimals)}, more extreme than ${(percentile * 100).toFixed(0)} % of days</small>
+                    <div class="rank-bar"><div class="rank-marker" style="left:${(percentile * 100).toFixed(1)}%"></div></div>
+                </div>`;
+        }
 
         function buildExplanationCard(date, detail) {
             // Top 3 tabular features furthest from the training-set normal (by absolute z-score)
@@ -107,10 +201,14 @@
                 .join(" &nbsp;|&nbsp; ");
 
             return `
-                <div style="border:1px solid #ddd; border-radius:8px; padding:12px; margin-bottom:10px;">
-                    <strong>${date}</strong> — IF score: ${detail.score_if.toFixed(2)}, AE score: ${detail.score_ae_global.toFixed(4)}<br>
-                    <small><strong>(IF) Most deviating stats:</strong> ${topFeatures}</small><br>
-                    <small><strong>(AE) Reconstruction error by channel:</strong> ${channelErrors}</small>
+                <div class="day-card">
+                    <strong>${date}</strong>
+                    ${buildModelRow("Isolation Forest (IF)", "if", detail.score_if, 2)}
+                    ${buildModelRow("Autoencoder (AE)", "ae", detail.score_ae_global, 4)}
+                    <p style="margin: 12px 0 4px 0;"><small><strong>(IF) Most deviating stats:</strong> ${topFeatures}<br>
+                        <span class="muted">z = number of standard deviations from a typical day (|z| above 2 is already far from usual).</span></small></p>
+                    <p style="margin: 4px 0 0 0;"><small><strong>(AE) Reconstruction error by channel:</strong> ${channelErrors}<br>
+                        <span class="muted">How badly the autoencoder rebuilt each curve from what it learned on usual days: higher = that channel is the least "usual".</span></small></p>
                 </div>
             `;
         }

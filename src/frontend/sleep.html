@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Garmin Sleep Analysis</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+        body { font-family: sans-serif; max-width: 900px; margin: 40px auto; }
+        a.back-link { display: inline-block; margin-bottom: 16px; }
+        h2 { margin-top: 44px; border-bottom: 1px solid #ddd; padding-bottom: 6px; }
+        h3 { margin: 24px 0 8px 0; }
+        select { margin-bottom: 12px; }
+        #night-select { width: 100%; height: 200px; }
+        .muted { color: #555; }
+        .note { background: #f7f7f7; border-left: 4px solid #bbb; padding: 10px 14px; margin: 12px 0; font-size: 0.95em; }
+        .card { border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin: 12px 0; }
+        .chart-box { position: relative; height: 420px; }
+        .stage-bar { display: flex; height: 22px; border-radius: 4px; overflow: hidden; margin: 8px 0; }
+        .stage-legend span { margin-right: 16px; white-space: nowrap; }
+        .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; }
+        .error { color: #b00020; }
+        canvas { max-width: 100%; }
+
+        /* Section 4: simple error comparison bars */
+        .error-row { margin: 14px 0; }
+        .error-label { margin-bottom: 4px; }
+        .error-track { background: #eee; border-radius: 4px; height: 22px; }
+        .error-fill { height: 22px; border-radius: 4px; color: #fff; font-size: 0.85em; font-weight: bold;
+            line-height: 22px; padding-left: 8px; box-sizing: border-box; white-space: nowrap; }
+        .error-fill.baseline { background: #999; }
+        .error-fill.model { background: #2a9d8f; }
+    </style>
+</head>
+<body>
+    <a class="back-link" href="index.html">&larr; Back to home</a>
+    <h1>Garmin Sleep Analysis</h1>
+    <p class="muted" id="intro">Loading...</p>
+    <div id="load-error" class="error"></div>
+
+    <h2>1. Sleep score over time</h2>
+    <label for="period-select">Period:</label>
+    <select id="period-select">
+        <option value="90">Last 90 nights</option>
+        <option value="180">Last 180 nights</option>
+        <option value="365">Last 365 nights</option>
+        <option value="0">All nights</option>
+    </select>
+    <div class="chart-box" style="height: 320px;"><canvas id="overview-canvas"></canvas></div>
+    <div class="note">The dashed line is the model fitted on <em>all</em> nights (in-sample), so it looks better than what the model would really achieve on new nights. The honest performance estimate is in section 4.</div>
+
+    <h2>2. Night explorer</h2>
+    <label for="night-select">Select a night (date = the morning the night ends; most recent first):</label>
+    <select id="night-select" size="10"></select>
+    <div id="night-detail"></div>
+
+    <h2>3. Main factors (all nights)</h2>
+    <p class="muted">Standardized Ridge coefficients: change in predicted sleep score (points) for a one-standard-deviation increase of each factor measured the day before the night.</p>
+    <div class="chart-box"><canvas id="coef-canvas"></canvas></div>
+
+    <h2>4. How reliable is the model?</h2>
+    <div id="reliability"></div>
+
+    <h2>Limits</h2>
+    <div class="note" id="limits"></div>
+
+    <script>
+        const API_BASE = "https://738qk36avg.execute-api.eu-west-3.amazonaws.com";
+
+        const POSITIVE_COLOR = "#2a9d8f";
+        const NEGATIVE_COLOR = "#e63946";
+
+        const FEATURE_LABELS = {
+            steps: "Steps", calories: "Calories", distance_meters: "Distance",
+            avg_stress: "Average stress", max_stress: "Max stress",
+            resting_hr: "Resting heart rate", min_hr: "Min heart rate", max_hr: "Max heart rate",
+            body_battery_charged: "Body battery charged", body_battery_drained: "Body battery drained",
+            body_battery_highest: "Body battery highest", body_battery_lowest: "Body battery lowest",
+            avg_respiration: "Average respiration",
+            intensity_minutes_moderate: "Moderate intensity minutes",
+            intensity_minutes_vigorous: "Vigorous intensity minutes",
+            vo2max: "VO2max",
+        };
+        const label = key => FEATURE_LABELS[key] || key;
+
+        const STAGES = [
+            { key: "deep_sleep_seconds", name: "Deep", color: "#264653" },
+            { key: "light_sleep_seconds", name: "Light", color: "#457b9d" },
+            { key: "rem_sleep_seconds", name: "REM", color: "#9b5de5" },
+            { key: "awake_sleep_seconds", name: "Awake", color: "#f4a261" },
+        ];
+
+        let summary = null;
+        let nights = [];
+        let overviewChart = null;
+        let contributionChart = null;
+
+        async function fetchJson(path) {
+            const response = await fetch(`${API_BASE}${path}`);
+            if (!response.ok) throw new Error(`API error ${response.status} on ${path}`);
+            return response.json();
+        }
+
+        function formatDuration(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.round((seconds % 3600) / 60);
+            return `${hours}h${String(minutes).padStart(2, "0")}`;
+        }
+
+        function formatValue(value) {
+            return Number(value).toLocaleString("en-US", { maximumFractionDigits: 1 });
+        }
+
+        /* ---------- 1. Overview ---------- */
+        function drawOverview(count) {
+            const subset = count === 0 ? nights : nights.slice(-count);
+            if (overviewChart) overviewChart.destroy();
+            overviewChart = new Chart(document.getElementById("overview-canvas"), {
+                type: "line",
+                data: {
+                    labels: subset.map(n => n.date),
+                    datasets: [
+                        { label: "Actual sleep score", data: subset.map(n => n.sleep_score),
+                          borderColor: "#457b9d", borderWidth: 1.5, pointRadius: 1.5 },
+                        { label: "Model fit (in-sample)", data: subset.map(n => n.predicted_score),
+                          borderColor: "#e63946", borderWidth: 1.5, borderDash: [5, 4], pointRadius: 0 },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: "index", intersect: false },
+                    scales: { x: { ticks: { maxTicksLimit: 10 } } },
+                },
+            });
+        }
+
+        /* ---------- 2. Night explorer ---------- */
+        function buildStageBar(night) {
+            const total = STAGES.reduce((sum, s) => sum + night[s.key], 0);
+            const segments = STAGES.map(s =>
+                `<div title="${s.name}" style="width:${(100 * night[s.key] / total).toFixed(1)}%; background:${s.color};"></div>`
+            ).join("");
+            const legend = STAGES.map(s =>
+                `<span><span class="dot" style="background:${s.color}"></span>${s.name}: ${formatDuration(night[s.key])}</span>`
+            ).join("");
+            return `<div class="stage-bar">${segments}</div><div class="stage-legend"><small>${legend}</small></div>`;
+        }
+
+        function drawContributions(night) {
+            const entries = Object.entries(night.contributions)
+                .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
+            if (contributionChart) contributionChart.destroy();
+            contributionChart = new Chart(document.getElementById("contribution-canvas"), {
+                type: "bar",
+                data: {
+                    labels: entries.map(([key]) => label(key)),
+                    datasets: [{
+                        data: entries.map(([, value]) => value),
+                        backgroundColor: entries.map(([, value]) => value >= 0 ? POSITIVE_COLOR : NEGATIVE_COLOR),
+                    }],
+                },
+                options: {
+                    indexAxis: "y",
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => `${ctx.parsed.x >= 0 ? "+" : ""}${ctx.parsed.x.toFixed(2)} points`,
+                                afterLabel: ctx => `Value the day before: ${formatValue(night.features[entries[ctx.dataIndex][0]])}`,
+                            },
+                        },
+                    },
+                    scales: { x: { title: { display: true, text: "Contribution to the predicted score (points)" } } },
+                },
+            });
+        }
+
+        async function showNight(date) {
+            const target = document.getElementById("night-detail");
+            try {
+                const night = await fetchJson(`/sleep/nights/${date}`);
+                const intercept = summary.meta.intercept;
+                const sumContrib = night.predicted_score - intercept;
+                const stagesHtml = night.stages_valid
+                    ? buildStageBar(night)
+                    : `<div class="note">Sleep stages are not reliable for this night (the watch did not classify at least one stage).</div>`;
+                target.innerHTML = `
+                    <div class="card">
+                        <strong>Night ending ${night.date}</strong><br>
+                        Actual sleep score: <strong>${night.sleep_score.toFixed(0)}</strong> &nbsp;|&nbsp;
+                        Model prediction: <strong>${night.predicted_score.toFixed(1)}</strong> &nbsp;|&nbsp;
+                        Duration: ${formatDuration(night.sleep_time_seconds)}
+                        ${stagesHtml}
+                    </div>
+                    <h3>Why this prediction?</h3>
+                    <p class="muted">Average night (${intercept.toFixed(1)}) ${sumContrib >= 0 ? "+" : "−"} sum of the contributions below (${Math.abs(sumContrib).toFixed(1)})
+                    = ${night.predicted_score.toFixed(1)}. Contributions use the activity and physiology of the <em>previous day</em>.
+                    They describe associations in my own data, not causes.</p>
+                    <div class="chart-box"><canvas id="contribution-canvas"></canvas></div>`;
+                drawContributions(night);
+            } catch (err) {
+                target.innerHTML = `<p class="error">${err.message}</p>`;
+            }
+        }
+
+        function fillNightSelect() {
+            const select = document.getElementById("night-select");
+            [...nights].reverse().forEach(night => {
+                const option = document.createElement("option");
+                option.value = night.date;
+                option.textContent = `${night.date} — score ${night.sleep_score.toFixed(0)}${night.stages_valid ? "" : " (stages n/a)"}`;
+                select.appendChild(option);
+            });
+            select.addEventListener("change", () => showNight(select.value));
+            select.selectedIndex = 0;
+            showNight(select.value);
+        }
+
+        /* ---------- 3. Global coefficients ---------- */
+        function drawCoefficients() {
+            const coefs = summary.coefficients;
+            new Chart(document.getElementById("coef-canvas"), {
+                type: "bar",
+                data: {
+                    labels: coefs.map(c => label(c.feature)),
+                    datasets: [{
+                        data: coefs.map(c => c.coefficient),
+                        backgroundColor: coefs.map(c => c.coefficient >= 0 ? POSITIVE_COLOR : NEGATIVE_COLOR),
+                    }],
+                },
+                options: {
+                    indexAxis: "y",
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { title: { display: true, text: "Points of sleep score per +1 standard deviation" } } },
+                },
+            });
+        }
+
+        /* ---------- 4. Reliability (simple comparison of average errors) ---------- */
+        function drawReliability() {
+            const container = document.getElementById("reliability");
+            const rows = summary.model_comparison;
+            const base = rows.find(r => r.target === "sleep_score" && r.model === "baseline_median");
+            const best = rows.find(r => r.target === "sleep_score" && r.model === "ridge_no_ema");
+            if (!base || !best) {
+                container.innerHTML = `<p class="muted">Reliability figures are not available.</p>`;
+                return;
+            }
+            const [wins, total] = best.folds_beating_baseline.split("/");
+            const modelWidth = (100 * best.mae_mean / base.mae_mean).toFixed(1);
+
+            container.innerHTML = `
+                <p>Tested on nights the model had never seen, here is how far off the predicted sleep score is on average:</p>
+                <div class="error-row">
+                    <div class="error-label">Guessing the same typical score every night</div>
+                    <div class="error-track"><div class="error-fill baseline" style="width:100%">${base.mae_mean.toFixed(1)} points</div></div>
+                </div>
+                <div class="error-row">
+                    <div class="error-label">Using the previous day's activity and physiology (the model)</div>
+                    <div class="error-track"><div class="error-fill model" style="width:${modelWidth}%">${best.mae_mean.toFixed(1)} points</div></div>
+                </div>
+                <p>The model is about <strong>${best.gain_vs_baseline_pct.toFixed(0)} % closer</strong> than a constant guess, and it was
+                better in ${wins} of ${total} test periods. So the link is real, but small: the previous day only explains a little of how I sleep.</p>`;
+        }
+
+        function fillTexts() {
+            const meta = summary.meta;
+            document.getElementById("intro").textContent =
+                `${meta.n_nights} nights from ${meta.date_start} to ${meta.date_end}. Can the previous day's activity and physiology ` +
+                `explain how I sleep? Short answer: only a little. This page shows what is found.`;
+            document.getElementById("limits").innerHTML = `
+                <ul>
+                    <li><strong>One person only</strong> (my own watch): nothing here generalizes to other people.</li>
+                    <li><strong>Weak signal</strong>: the model explains only a small part of the variance. Sleep depends on things the watch cannot see
+                        (alcohol, caffeine, late meals, screens, temperature, mood).</li>
+                    <li><strong>Sleep stages are poorly predictable</strong>: in particular deep sleep shows no usable signal. ${meta.n_nights - meta.n_nights_valid_stages}
+                        nights with at least one stage at 0 were excluded from the stage models (the watch did not classify them).</li>
+                    <li><strong>Associations, not causes</strong>: stress and body battery are correlated with each other, so their coefficients share one effect.</li>
+                    <li><strong>In-sample predictions</strong> (sections 1 and 2) are optimistic; use section 4 for real performance.</li>
+                </ul>`;
+        }
+
+        async function init() {
+            try {
+                [summary, nights] = await Promise.all([fetchJson("/sleep/summary"), fetchJson("/sleep/nights")]);
+            } catch (err) {
+                document.getElementById("intro").textContent = "";
+                document.getElementById("load-error").textContent = `Could not load sleep data: ${err.message}`;
+                return;
+            }
+            fillTexts();
+            drawOverview(Number(document.getElementById("period-select").value));
+            document.getElementById("period-select").addEventListener("change", e => drawOverview(Number(e.target.value)));
+            fillNightSelect();
+            drawCoefficients();
+            drawReliability();
+        }
+
+        init();
+    </script>
+</body>
+</html>
