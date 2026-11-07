@@ -43,9 +43,13 @@ class Autoencoder(torch.nn.Module):
         return result
 
 if __name__ == "__main__":
-    data = np.load("data/dataset_normalized.npz")
+    data = np.load("data/dataset_normalized_v2.npz")
     train_array = data["train"]
     eval_array = data["val"]
+    dates_val = data["dates_val"]
+
+    n_train_days = len(train_array)
+    val_start = dates_val[0]
 
     mlflow.set_tracking_uri("sqlite:///mlflow.db") # mlflow ui --backend-store-uri sqlite:///mlflow.db
     mlflow.set_experiment("autoencoder")
@@ -56,44 +60,49 @@ if __name__ == "__main__":
     garmin_dataloader1_train = DataLoader(dataset=garmin_dataset1_train, batch_size=16, shuffle=True)
     garmin_dataloader1_eval = DataLoader(dataset=garmin_dataset1_eval, batch_size=16) # no shuffle needed for evaluation
 
+    for seed in [0, 1, 2, 3, 4]:
+        torch.manual_seed(seed)
+        model = Autoencoder()
+        loss_fn = torch.nn.MSELoss()
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-    model = Autoencoder()
-    loss_fn = torch.nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+        with mlflow.start_run():
+            mlflow.set_tag("version", "v2")
+            mlflow.log_params({
+                "learning_rate": 0.001,
+                "batch_size": 16,
+                "n_epochs": 40,
+                "seed": seed,
+                "n_train_days": n_train_days,
+                "val_start": str(val_start)
+            })
+            # Model training
+            for epoch in range(40):
+                total_loss = 0
+                for batch in garmin_dataloader1_train:
+                    optimizer.zero_grad()
+                    output = model(batch)
+                    loss  = loss_fn(batch, output)
+                    loss.backward()
+                    optimizer.step()
+                    total_loss += loss.item()
+                train_loss = total_loss / len(garmin_dataloader1_train)
 
-    with mlflow.start_run():
-        mlflow.log_params({
-            "learning_rate": 0.001,
-            "batch_size": 16,
-            "n_epochs": 40,
-        })
-        # Model training
-        for epoch in range(20):
-            total_loss = 0
-            for batch in garmin_dataloader1_train:
-                optimizer.zero_grad()
-                sortie = model(batch)
-                loss  = loss_fn(batch, sortie)
-                loss.backward()
-                optimizer.step()
-                total_loss += loss.item()
-            train_loss = total_loss / len(garmin_dataloader1_train)
+                # Model evaluation
+                model.eval()
+                with torch.no_grad():
+                    eval_loss = 0
+                    for batch in garmin_dataloader1_eval:
+                        output = model(batch)
+                        loss  = loss_fn(batch, output)
+                        eval_loss += loss.item()
+                eval_loss = eval_loss / len(garmin_dataloader1_eval)
 
-            # Model evaluation
-            model.eval()
-            with torch.no_grad():
-                eval_loss = 0
-                for batch in garmin_dataloader1_eval:
-                    sortie = model(batch)
-                    loss  = loss_fn(batch, sortie)
-                    eval_loss += loss.item()
-            eval_loss = eval_loss / len(garmin_dataloader1_eval)
+                print(f"eval loss -> {eval_loss}, and train loss -> {train_loss}")
 
-            print(f"eval loss -> {eval_loss}, and train loss -> {train_loss}")
+                model.train()
 
-            model.train()
+                mlflow.log_metric("train_loss", train_loss, step=epoch)
+                mlflow.log_metric("eval_loss", eval_loss, step=epoch)
 
-            mlflow.log_metric("train_loss", train_loss, step=epoch)
-            mlflow.log_metric("eval_loss", eval_loss, step=epoch)
-
-        mlflow.pytorch.log_state_dict(model.state_dict(), artifact_path="model_state_dict")
+            mlflow.pytorch.log_state_dict(model.state_dict(), artifact_path="model_state_dict")

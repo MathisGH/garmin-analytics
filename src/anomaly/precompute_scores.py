@@ -51,7 +51,7 @@ def score_day(i, day_date, score_if_full, scores_ae_global, scores_ae_channel, z
 
 if __name__ == "__main__":
     # Data
-    data_loaded = np.load("data/dataset_normalized.npz")
+    data_loaded = np.load("data/dataset_normalized_v2.npz")
 
     features_train = data_loaded["features_train"]
     features_val = data_loaded["features_val"]

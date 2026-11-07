@@ -27,15 +27,16 @@ if __name__ == "__main__":
     final_features = build_tabular_features(final) # For the scikit-learn model
 
     # Train/test split
-    cutoff = int(TRAIN_VAL_SPLIT_RATIO*len(all_dates))
+    #cutoff = int(TRAIN_VAL_SPLIT_RATIO*len(all_dates))
+    cutoff_v2 = len(final) - 30 # for the re-training I will only use the last 30 days as the validation set
 
-    final_train = final[:cutoff]
-    final_features_train = final_features[:cutoff]
-    dates_train = all_dates[:cutoff]
+    final_train = final[:cutoff_v2]
+    final_features_train = final_features[:cutoff_v2]
+    dates_train = all_dates[:cutoff_v2]
 
-    final_val = final[cutoff:]
-    final_features_val = final_features[cutoff:]
-    dates_val = all_dates[cutoff:]
+    final_val = final[cutoff_v2:]
+    final_features_val = final_features[cutoff_v2:]
+    dates_val = all_dates[cutoff_v2:]
 
     # Normalization
     mean = final_train.mean(axis=(0, 1)) # I "deleted" 2 dimensions (axis=(0,1)) at once in order to get the mean for each column
@@ -48,6 +49,6 @@ if __name__ == "__main__":
     dates_val_array = np.array(dates_val)
 
 
-    np.savez(file = ARRAYS_PATH / "dataset_normalized.npz", train = final_train_norm, val = final_val_norm,
+    np.savez(file = ARRAYS_PATH / "dataset_normalized_v2.npz", train = final_train_norm, val = final_val_norm,
             dates_train = dates_train_array, dates_val = dates_val_array, mean = mean, std = std, 
             features_train = final_features_train, features_val = final_features_val)

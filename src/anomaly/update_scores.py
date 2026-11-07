@@ -55,7 +55,7 @@ if __name__ == "__main__":
     features_full = build_tabular_features(raw_full)
 
     # 2. Load FROZEN stats (not recomputed here)
-    data_loaded = np.load("data/dataset_normalized.npz")
+    data_loaded = np.load("data/dataset_normalized_v2.npz")
     mean = data_loaded["mean"]
     std = data_loaded["std"]
     mean_feat = data_loaded["mean_feat"]
