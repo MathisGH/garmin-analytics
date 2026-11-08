@@ -37,10 +37,7 @@ def load_ae(run_id):
 
 def score_ae(model, array):
     """One reconstruction error per day: mean over time and channels (dims 1 and 2), dim 0 = day"""
-    loss_fn = torch.nn.MSELoss(reduction="none") # "reduction=None" so that the loss let me do the
-                                                # mean, but only on dim 1 (time) and 2 (feature) while
-                                                # dim 3 (day) separated because we want a score for
-                                                # each day
+    loss_fn = torch.nn.MSELoss(reduction="none")
     loader = DataLoader(GarminDataset(array), batch_size=16)
     scores = []
     with torch.no_grad():
@@ -76,7 +73,6 @@ if __name__ == "__main__":
 
     ae_v2_ids = mlflow.search_runs(experiment_names=["autoencoder"], filter_string="tags.version = 'v2'")["run_id"].tolist()
     print("AE v2 runs:", len(ae_v2_ids))
-    print("test score:", score_ae(load_ae(ae_v2_ids[0]), val_v2).mean())
 
     # AE v2: one score per day for each of the 5 seeds
     scores_ae_v2_seeds = np.array([score_ae(load_ae(run_id), val_v2) for run_id in ae_v2_ids])

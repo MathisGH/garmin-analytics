@@ -1,13 +1,13 @@
 """
-dataset.py -- prepare the normalized train/val dataset for modeling (only for anomaly detection).
+anomaly_dataset.py -- prepare the normalized train/val dataset for anomaly detection.
 
-Goal: turn the raw (n_days, 288, 4) array from features.py into a
-chronologically split, per-channel normalized dataset ready to feed into
-a PyTorch Dataset later, saved to disk so it doesn't need rebuilding.
+Goal: turn the raw (n_days, 288, 4) array from anomaly_features.py into a
+chronologically split, per-channel normalized dataset saved to disk.
 
-How: build_dataset() from features.py -> chronological 85/15 train/val
-split by index -> per-channel z-score normalization (mean/std fit on
-train only) -> everything saved to data/dataset_normalized.npz.
+How: build_dataset() -> split by index: the last 30 days are the validation set,
+everything before is the train set -> per-channel z-score normalization (mean/std
+fit on train only) -> saved to data/dataset_normalized_v2.npz.
+(v1 used an 85/15 split and was saved as dataset_normalized_v1.npz.)
 """
 
 from src.anomaly.anomaly_features import build_dataset, build_tabular_features
@@ -15,7 +15,7 @@ from datetime import date
 import numpy as np
 from pathlib import Path
 
-TRAIN_VAL_SPLIT_RATIO = 0.85
+# TRAIN_VAL_SPLIT_RATIO = 0.85
 ARRAYS_PATH = Path("data")
 DB_PATH = "data/garmin_data.db"
 

@@ -20,8 +20,8 @@ import json
 mlflow.set_tracking_uri("sqlite:///mlflow.db") # mlflow ui --backend-store-uri sqlite:///mlflow.db
 
 
-RUN_ID_IF = "556c363237564704aea67f2ee3bffa06"
-RUN_ID_AE = "1b87381d170a4d1ea7fbee74358b19c3"
+RUN_ID_IF = "c6e17ccc7c764efa823e3f54370c606a"
+RUN_ID_AE = "dc688832bf9547c6961ca2d9fc94edbf" # run_id of the seed 0 because it is the most reprensentative of the overall score (around 0.405)
 OUTPUT_PATH = "data/scores_precomputed.json"
 
 CHANNEL_NAMES = ['body_battery', 'heart_rate', 'respiration', 'stress']   # exact order of each 4 channels in raw_full

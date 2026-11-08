@@ -58,8 +58,8 @@ if __name__ == "__main__":
     data_loaded = np.load("data/dataset_normalized_v2.npz")
     mean = data_loaded["mean"]
     std = data_loaded["std"]
-    mean_feat = data_loaded["mean_feat"]
-    std_feat = data_loaded["std_feat"]
+    mean_feat = data_loaded["features_train"].mean(axis=0)
+    std_feat = data_loaded["features_train"].std(axis=0)
 
     # 3. Load frozen models
     if_model = mlflow.sklearn.load_model(f"runs:/{RUN_ID_IF}/model")
