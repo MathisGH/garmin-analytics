@@ -96,4 +96,4 @@ def get_night(night_date: str) -> dict:
     return sleep_nights[night_date]
 
 
-handler = Mangum(app, lifespan="off", api_gateway_base_path="/")  # lifespan=off et api_gateway_base_path="/" : pour éviter certains problèmes ?
+handler = Mangum(app, lifespan="off") # "lifespan" argument in case that startup/shutdown events are used (not this case here because the data is loaded at the import)
