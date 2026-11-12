@@ -6,9 +6,13 @@ data/
 test_outputs/
 data_exploration.ipynb
 *.txt
+!requirements*.txt
 *.db
 mlruns/
 deployment.zip
 *.zip
 lambda_package/
 tests.py
+*.csv
+.pytest_cache/
+.ruff_cache/

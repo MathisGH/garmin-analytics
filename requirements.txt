@@ -1,11 +1,9 @@
 garminconnect
 python-dotenv
-os
 garth
-sqlite3
 pandas
 numpy
-sklearn
+scikit-learn
 mlflow
 torch
 fastapi
