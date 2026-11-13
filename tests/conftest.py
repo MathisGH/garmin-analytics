@@ -13,6 +13,8 @@ comes from, which makes the assertions easy to write.
 from datetime import date, timedelta
 import pytest
 from src import database
+import pandas as pd
+import numpy as np
 
 N_DAYS = 40
 START_DATE = date(2026, 1, 1)
@@ -30,6 +32,13 @@ SLEEP_COLUMNS = [
     "light_sleep_seconds", "rem_sleep_seconds", "awake_sleep_seconds",
 ]
 
+@pytest.fixture
+def db_path(tmp_path): # tmp_path is given by pytest (a temporary file deleted after the test)
+    """A fresh database with the schema created, for each test"""
+    path = str(tmp_path / "data" / "test.db")
+    database.create_schema(path)
+    return path
+
 
 @pytest.fixture
 def sleep_db_path(tmp_path):
@@ -42,3 +51,10 @@ def sleep_db_path(tmp_path):
         fields = {column: VALUE_OFFSET + i for column in SLEEP_COLUMNS}
         database.update_daily_summary(path, day, fields)
     return path
+
+
+@pytest.fixture
+def date_value_df():
+    """20 consecutive days with a 'value' column equal to the day index (0..19)"""
+    dates = pd.date_range("2026-01-01", periods=20)
+    return pd.DataFrame({"date": dates, "value": np.arange(20)})

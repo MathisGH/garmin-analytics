@@ -13,14 +13,6 @@ import pytest
 from src import database
 
 
-@pytest.fixture
-def db_path(tmp_path): # tmp_path is given by pytest (a temporary file deleted after the test)
-    """A fresh database with the schema created, for each test"""
-    path = str(tmp_path / "data" / "test.db")
-    database.create_schema(path)
-    return path
-
-
 def test_create_schema_creates_both_tables(db_path):
     connection = sqlite3.connect(db_path)
     rows = connection.execute(
