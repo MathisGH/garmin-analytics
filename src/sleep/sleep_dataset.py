@@ -5,9 +5,11 @@ Goal: split build_sleep_dataset() output 85/15 by date, z-score normalize
 causes (fit on train only), save everything to data/sleep_dataset_normalized.npz
 """
 
-from src.sleep.sleep_features import build_sleep_dataset, cause_metrics, effect_metrics
-import numpy as np
 from pathlib import Path
+
+import numpy as np
+
+from src.sleep.sleep_features import build_sleep_dataset, cause_metrics, effect_metrics
 
 TRAIN_VAL_SPLIT_RATIO = 0.85
 ARRAYS_PATH = Path("data")

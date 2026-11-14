@@ -9,8 +9,8 @@ How: using sqlite3. Each helper opens and closes its own
 connection; metric name constants avoid typos across files.
 """
 
-import sqlite3
 import os
+import sqlite3
 
 DB_PATH = os.path.join("data", "garmin_data.db")
 

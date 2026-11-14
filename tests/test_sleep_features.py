@@ -7,10 +7,12 @@ and that nothing from the night (or later) leaks into its own features.
 How: synthetic database from conftest.py (value of day i = 100 + i).
 """
 
+import sqlite3
+
 import pandas as pd
+
 from src import database
 from src.sleep.sleep_features import build_sleep_dataset, cause_metrics
-import sqlite3
 
 EXPECTED_ROWS = 39  # N_DAYS (40, see conftest.py) minus the first day
 

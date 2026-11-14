@@ -9,12 +9,12 @@ How: load the sleep dataset (raw features, no normalization needed for trees)
 -> evaluate once on val -> log metrics and feature importances in MLflow.
 """
 
-import numpy as np
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
-from sklearn.metrics import mean_absolute_error, r2_score
 import mlflow
 import mlflow.sklearn
+import numpy as np
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, r2_score
+from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
 
 TARGET = "sleep_score"
 N_ESTIMATORS = 300

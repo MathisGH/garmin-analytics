@@ -10,10 +10,11 @@ calendar grid and interpolates gaps; build_dataset() loops this over a
 date range and stacks the results into one (n_days, 288, 4) array.
 """
 
-from datetime import timedelta, date
-import pandas as pd
 import sqlite3
+from datetime import date, timedelta
+
 import numpy as np
+import pandas as pd
 
 
 def build_daily_matrix(dates_str, connection):

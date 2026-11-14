@@ -7,15 +7,14 @@ Goal: Rather than computing the score at every API call, store each anomaly scor
 How: ...
 """
 
-import numpy as np
-import pandas as pd
-import mlflow
-import torch
-from torch.utils.data import DataLoader
-from src.anomaly.model_autoencoder import Autoencoder, GarminDataset
 import json
 
+import mlflow
+import numpy as np
+import torch
+from torch.utils.data import DataLoader
 
+from src.anomaly.model_autoencoder import Autoencoder, GarminDataset
 
 mlflow.set_tracking_uri("sqlite:///mlflow.db") # mlflow ui --backend-store-uri sqlite:///mlflow.db
 

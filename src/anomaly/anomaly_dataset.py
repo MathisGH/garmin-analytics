@@ -10,10 +10,12 @@ fit on train only) -> saved to data/dataset_normalized_v2.npz.
 (v1 used an 85/15 split and was saved as dataset_normalized_v1.npz.)
 """
 
-from src.anomaly.anomaly_features import build_dataset, build_tabular_features
 from datetime import date
-import numpy as np
 from pathlib import Path
+
+import numpy as np
+
+from src.anomaly.anomaly_features import build_dataset, build_tabular_features
 
 # TRAIN_VAL_SPLIT_RATIO = 0.85
 ARRAYS_PATH = Path("data")

@@ -11,16 +11,17 @@ How: expanding-window time-series cross-validation over the whole dataset
 only, without leakage. Results are saved to CSV and logged in MLflow.
 """
 
+from pathlib import Path
+
+import mlflow
 import numpy as np
 import pandas as pd
-from pathlib import Path
 from sklearn.dummy import DummyRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import RidgeCV
 from sklearn.model_selection import TimeSeriesSplit, cross_val_score
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
-import mlflow
 
 N_SPLITS = 5
 INNER_SPLITS = 3

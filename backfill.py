@@ -9,11 +9,12 @@ daily_summary, calls extract_day() for the rest, with a small delay
 between requests to stay under Garmin's rate limits.
 """
 
-from src.auth import get_authenticated_client
-from src.database import create_schema, DB_PATH, is_day_already_extracted
-from src.extract import extract_day
-from datetime import timedelta, date
 import time
+from datetime import date, timedelta
+
+from src.auth import get_authenticated_client
+from src.database import DB_PATH, create_schema, is_day_already_extracted
+from src.extract import extract_day
 
 start = date(2023, 10, 1) # Approximately the date when I started to wear my Garmin watch (almost) everyday
 end = date.today()

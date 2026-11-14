@@ -7,8 +7,9 @@ How:
 """
 
 import numpy as np
-import pandas as pd
-from src.sleep.sleep_dataset import split_chronologically, normalize_causes
+
+from src.sleep.sleep_dataset import normalize_causes, split_chronologically
+
 
 def test_temporal_split_date_order(date_value_df):
     result_train, result_val = split_chronologically(date_value_df, 0.85)

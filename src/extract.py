@@ -9,19 +9,20 @@ How: one function, extract_day(), calling the relevant garminconnect
 endpoints and mapping their JSON fields onto the SQLite schema.
 """
 
+import pandas as pd
+
 from src.database import (
-    DB_PATH,
-    ensure_daily_row,
-    update_daily_summary,
-    insert_timeseries,
-    METRIC_HEART_RATE,
-    METRIC_STRESS,
     METRIC_BODY_BATTERY,
+    METRIC_HEART_RATE,
     METRIC_RESPIRATION,
     METRIC_SLEEP_MOVEMENT,
     METRIC_SLEEP_STAGE,
+    METRIC_STRESS,
+    ensure_daily_row,
+    insert_timeseries,
+    update_daily_summary,
 )
-import pandas as pd
+
 
 def extract_day(client, db_path, day_date):
     """Fetch and store all retained metrics for one day (format: 'YYYY-MM-DD')"""

@@ -8,12 +8,12 @@ How: load the normalized sleep dataset -> fit Ridge on train -> MAE on val
 -> log params/metrics/model in MLflow, with the baseline MAE alongside.
 """
 
-import numpy as np
-from sklearn.linear_model import Ridge, RidgeCV
-from sklearn.model_selection import TimeSeriesSplit
-from sklearn.metrics import mean_absolute_error, r2_score
 import mlflow
 import mlflow.sklearn
+import numpy as np
+from sklearn.linear_model import Ridge, RidgeCV
+from sklearn.metrics import mean_absolute_error, r2_score
+from sklearn.model_selection import TimeSeriesSplit
 
 TARGET = "sleep_score"
 ALPHAS = [1, 10, 100, 300, 1000, 3000]

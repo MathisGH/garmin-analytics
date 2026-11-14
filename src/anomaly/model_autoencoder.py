@@ -4,11 +4,11 @@ model_autoencoder.py -- .
 Goal: Define and test the autoencoder architecture
 """
 
-import torch
-import numpy as np
-from torch.utils.data import DataLoader
 import mlflow
 import mlflow.pytorch
+import numpy as np
+import torch
+from torch.utils.data import DataLoader
 
 
 class GarminDataset(torch.utils.data.Dataset):

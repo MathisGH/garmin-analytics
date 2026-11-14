@@ -8,14 +8,15 @@ How: tries to reuse cached session tokens from ~/.garminconnect first;
 falls back to email/password login (from .env) if no valid cache is found.
 """
 
+import os
+
+from dotenv import load_dotenv
 from garminconnect import (
     Garmin,
     GarminConnectAuthenticationError,
     GarminConnectConnectionError,
     GarminConnectTooManyRequestsError,
 )
-from dotenv import load_dotenv
-import os
 
 TOKEN_STORE = os.path.expanduser("~/.garminconnect")
 

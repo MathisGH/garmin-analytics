@@ -6,10 +6,10 @@ Goal: ...
 How: ...
 """
 
-import numpy as np
-from sklearn.ensemble import IsolationForest
 import mlflow
 import mlflow.sklearn
+import numpy as np
+from sklearn.ensemble import IsolationForest
 
 N_ESTIMATORS = 100
 CONTAMINATION = 0.1

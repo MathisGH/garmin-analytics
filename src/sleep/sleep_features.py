@@ -6,10 +6,9 @@ outcome of the following night (day D+1), adding EMA-smoothed versions of
 a few features to capture accumulated fatigue, not just the previous day
 """
 
-from datetime import timedelta, date
-import pandas as pd
 import sqlite3
-import numpy as np
+
+import pandas as pd
 
 cause_metrics = ["steps", "calories", "distance_meters", "avg_stress", "max_stress",
     "resting_hr", "min_hr", "max_hr", "body_battery_charged",

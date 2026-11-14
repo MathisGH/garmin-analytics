@@ -9,7 +9,7 @@ never on data/garmin_data.db. tmp_path is a fresh folder deleted after the run.
 """
 
 import sqlite3
-import pytest
+
 from src import database
 
 

@@ -8,19 +8,19 @@ retraining, no train/val split)
 How: 
 """
 
-from datetime import date
-import time
-import numpy as np
-import mlflow
-import torch
-from torch.utils.data import DataLoader
 import json
+import time
+from datetime import date
 
 import boto3
+import mlflow
+import numpy as np
+import torch
+from torch.utils.data import DataLoader
 
 from src.anomaly.anomaly_features import build_dataset, build_tabular_features
 from src.anomaly.model_autoencoder import Autoencoder, GarminDataset
-from src.anomaly.precompute_scores import score_day, RUN_ID_IF, RUN_ID_AE, OUTPUT_PATH
+from src.anomaly.precompute_scores import OUTPUT_PATH, RUN_ID_AE, RUN_ID_IF, score_day
 
 DB_PATH = "data/garmin_data.db"
 mlflow.set_tracking_uri("sqlite:///mlflow.db")

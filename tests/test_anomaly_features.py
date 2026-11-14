@@ -7,13 +7,15 @@ How: synthetic db from conftest.py, with one full day, one sparse day and one mi
 """
 
 from datetime import date
-import numpy as np
-import pandas as pd
-from src.anomaly.anomaly_features import (
-    build_daily_matrix, build_dataset, build_tabular_features,
-)
-from tests.conftest import ANOMALY_FULL_DAY, ANOMALY_SPARSE_DAY, ANOMALY_METRIC_VALUES
 
+import numpy as np
+
+from src.anomaly.anomaly_features import (
+    build_daily_matrix,
+    build_dataset,
+    build_tabular_features,
+)
+from tests.conftest import ANOMALY_FULL_DAY, ANOMALY_METRIC_VALUES, ANOMALY_SPARSE_DAY
 
 
 def test_build_daily_matrix_full_day(anomaly_connection):

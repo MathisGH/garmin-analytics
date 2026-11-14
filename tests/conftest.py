@@ -10,12 +10,14 @@ positive, and each value tells us which day it
 comes from, which makes the assertions easy to write.
 """
 
-from datetime import date, timedelta
-import pytest
-from src import database
-import pandas as pd
-import numpy as np
 import sqlite3
+from datetime import date, timedelta
+
+import numpy as np
+import pandas as pd
+import pytest
+
+from src import database
 
 N_DAYS = 40
 START_DATE = date(2026, 1, 1)
