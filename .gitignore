@@ -16,3 +16,6 @@ tests_other.py
 *.csv
 .pytest_cache/
 .ruff_cache/
+.terraform/
+*.tfstate
+*.tfstate.*
