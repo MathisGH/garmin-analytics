@@ -18,7 +18,6 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parent
 LOG_PATH = PROJECT_ROOT / "logs" / "pipeline.log"
 
