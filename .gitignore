@@ -19,3 +19,4 @@ tests_other.py
 .terraform/
 *.tfstate
 *.tfstate.*
+logs/
