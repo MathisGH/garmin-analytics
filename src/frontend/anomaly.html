@@ -46,7 +46,7 @@
 
         <section class="panel">
             <h2><span class="step">1</span> Pick your days and metrics</h2>
-            <label for="day-select">Select one or more days (Ctrl/Cmd + click for multi-select). Days marked ⚠ are flagged by at least one model:</label>
+            <label for="day-select">Select one or more days (Ctrl/Cmd + click for multi-select). Days marked ⚠ are flagged by at least one model (⚠ = unusual, ⚠⚠ = very unusual, followed by the model(s) concerned):</label>
             <select id="day-select" multiple></select>
 
             <div class="metric-checkboxes">
@@ -136,7 +136,9 @@
                     const worst = Math.max(levelIf.rank, levelAe.rank);
                     if (worst > 0) flaggedCount++;
 
-                    const flag = worst === 2 ? " ⚠⚠" : worst === 1 ? " ⚠" : "";
+                    // ⚠ = "Unusual", ⚠⚠ = "Very unusual" (worst level of the two models), followed by the model(s) that flag it
+                    const flaggedBy = [levelIf.rank > 0 ? "IF" : null, levelAe.rank > 0 ? "AE" : null].filter(Boolean).join("+");
+                    const flag = worst > 0 ? ` ${"⚠".repeat(worst)} ${flaggedBy}` : "";
                     const option = document.createElement("option");
                     option.value = date;
                     option.textContent = `${date} (IF: ${scores.score_if.toFixed(2)}, AE: ${scores.score_ae_global.toFixed(3)})${flag}`;
