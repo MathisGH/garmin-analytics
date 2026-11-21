@@ -2,75 +2,71 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Garmin Anomaly Explorer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-    <style>
-        body { font-family: sans-serif; max-width: 900px; margin: 40px auto; }
-        select { width: 100%; height: 200px; margin-bottom: 12px; }
-        button { padding: 8px 16px; cursor: pointer; margin-bottom: 20px; }
-        a.back-link { display: inline-block; margin-bottom: 16px; }
-        .metric-checkboxes { margin-bottom: 12px; }
-        .metric-checkboxes label { margin-right: 16px; }
-        canvas { max-width: 100%; }
-        .muted { color: #555; }
-        .note { background: #f7f7f7; border-left: 4px solid #bbb; padding: 10px 14px; margin: 12px 0; font-size: 0.95em; }
-        .note ul { margin: 6px 0 0 0; padding-left: 20px; }
-        .note li { margin-bottom: 4px; }
-
-        /* Level badges (shared by the legend and the day cards) */
-        .badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 0.85em; font-weight: bold; color: #fff; }
-        .badge-normal { background: #2a9d8f; }
-        .badge-unusual { background: #e9a23b; }
-        .badge-very { background: #e63946; }
-
-        /* Position of a day among all days: green = typical, orange/red = extreme end of the history */
-        .rank-bar { position: relative; height: 10px; border-radius: 5px; margin: 6px 0 2px 0;
-            background: linear-gradient(to right, #2a9d8f 0%, #2a9d8f 85%, #e9a23b 85%, #e9a23b 95%, #e63946 95%, #e63946 100%); }
-        .rank-marker { position: absolute; top: -3px; width: 4px; height: 16px; background: #222; border-radius: 2px; transform: translateX(-2px); }
-        .model-row { margin-top: 10px; }
-        .day-card { border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
-    </style>
+    <link rel="stylesheet" href="style.css">
+    <script src="theme.js"></script>
 </head>
 <body>
-    <a class="back-link" href="index.html">&larr; Back to home</a>
-    <h1>Garmin Anomaly Explorer</h1>
-    <p class="muted" id="intro">Loading...</p>
+    <header class="site-header">
+        <div class="container nav">
+            <a class="brand" href="index.html">⌚ Garmin <span>Monitoring</span></a>
+            <nav class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="anomaly.html" class="active">Anomalies</a>
+                <a href="sleep.html">Sleep</a>
+            </nav>
+        </div>
+    </header>
 
-    <div class="note">
-        <strong>How to read this page</strong>
-        <ul>
-            <li>Two models look at each day of my watch data (heart rate, stress, body battery, respiration) and ask:
-                <em>"does this day look like my usual days?"</em></li>
-            <li><strong>IF</strong> (Isolation Forest) works on 16 daily statistics (mean, std, min, max of each metric).
-                <strong>AE</strong> (Autoencoder) works on the full 5-minute curves.</li>
-            <li>Scores have no unit and no medical meaning on their own. A day is flagged by comparing it to <em>all my other days</em>:</li>
-        </ul>
-        <p style="margin: 8px 0 0 0;">
-            <span class="badge badge-normal">Normal</span> among the 85 % most typical days &nbsp;
-            <span class="badge badge-unusual">Unusual</span> among the 15 % most extreme days &nbsp;
-            <span class="badge badge-very">Very unusual</span> among the 5 % most extreme days
-        </p>
-        <p style="margin: 8px 0 0 0;" class="muted">
-            By construction, about 15 % of days are flagged whatever happens, so "unusual" means "different from my own
-            habits", not "unhealthy". The two models do not always agree: that is expected on such a small dataset.
-        </p>
-    </div>
+    <main class="container">
+        <h1>Anomaly Explorer</h1>
+        <p class="lead" id="intro">Loading...</p>
 
-    <label for="day-select">Select one or more days (Ctrl/Cmd + click for multi-select). Days marked ⚠ are flagged by at least one model:</label>
-    <select id="day-select" multiple></select>
+        <div class="note">
+            <strong>How to read this page</strong>
+            <ul>
+                <li>Two models look at each day of my watch data (heart rate, stress, body battery, respiration) and ask:
+                    <em>"does this day look like my usual days?"</em></li>
+                <li><strong>IF</strong> (Isolation Forest) works on 16 daily statistics (mean, std, min, max of each metric).
+                    <strong>AE</strong> (Autoencoder) works on the full 5-minute curves.</li>
+                <li>Scores have no unit and no medical meaning on their own. A day is flagged by comparing it to <em>all my other days</em>:</li>
+            </ul>
+            <p style="margin: 10px 0 0 0;">
+                <span class="badge badge-normal">Normal</span> among the 85 % most typical days &nbsp;
+                <span class="badge badge-unusual">Unusual</span> among the 15 % most extreme days &nbsp;
+                <span class="badge badge-very">Very unusual</span> among the 5 % most extreme days
+            </p>
+            <p style="margin: 10px 0 0 0;" class="muted">
+                By construction, about 15 % of days are flagged whatever happens, so "unusual" means "different from my own
+                habits", not "unhealthy". The two models do not always agree: that is expected on such a small dataset.
+            </p>
+        </div>
 
-    <div class="metric-checkboxes">
-        <strong>Metrics:</strong>
-        <label><input type="checkbox" value="heart_rate" checked> Heart rate</label>
-        <label><input type="checkbox" value="stress"> Stress</label>
-        <label><input type="checkbox" value="body_battery"> Body battery</label>
-        <label><input type="checkbox" value="respiration"> Respiration</label>
-    </div>
+        <section class="panel">
+            <h2><span class="step">1</span> Pick your days and metrics</h2>
+            <label for="day-select">Select one or more days (Ctrl/Cmd + click for multi-select). Days marked ⚠ are flagged by at least one model:</label>
+            <select id="day-select" multiple></select>
 
-    <button id="show-btn">Show</button>
+            <div class="metric-checkboxes">
+                <strong>Metrics:</strong>
+                <label><input type="checkbox" value="heart_rate" checked> Heart rate</label>
+                <label><input type="checkbox" value="stress"> Stress</label>
+                <label><input type="checkbox" value="body_battery"> Body battery</label>
+                <label><input type="checkbox" value="respiration"> Respiration</label>
+            </div>
 
-    <canvas id="chart-canvas" height="100"></canvas>
-    <div id="explanations"></div>
+            <button id="show-btn">Show</button>
+        </section>
+
+        <section class="panel">
+            <h2><span class="step">2</span> Curves</h2>
+            <canvas id="chart-canvas" height="100"></canvas>
+        </section>
+
+        <div id="explanations"></div>
+    </main>
 
     <script>
         const API_BASE = "https://738qk36avg.execute-api.eu-west-3.amazonaws.com";
@@ -125,7 +121,7 @@
         const TIME_LABELS = buildTimeLabels();
 
         // A distinct color per day, cycled if more days than colors
-        const COLORS = ["#e63946", "#457b9d", "#2a9d8f", "#f4a261", "#9b5de5", "#264653"];
+        const COLORS = ["#e76f51", "#2a9d8f", "#4f86c6", "#e9c46a", "#9b5de5", "#457b9d"];
 
         async function loadDays() {
             try {
@@ -205,7 +201,7 @@
                     <strong>${date}</strong>
                     ${buildModelRow("Isolation Forest (IF)", "if", detail.score_if, 2)}
                     ${buildModelRow("Autoencoder (AE)", "ae", detail.score_ae_global, 4)}
-                    <p style="margin: 12px 0 4px 0;"><small><strong>(IF) Most deviating stats:</strong> ${topFeatures}<br>
+                    <p style="margin: 14px 0 4px 0;"><small><strong>(IF) Most deviating stats:</strong> ${topFeatures}<br>
                         <span class="muted">z = number of standard deviations from a typical day (|z| above 2 is already far from usual).</span></small></p>
                     <p style="margin: 4px 0 0 0;"><small><strong>(AE) Reconstruction error by channel:</strong> ${channelErrors}<br>
                         <span class="muted">How badly the autoencoder rebuilt each curve from what it learned on usual days: higher = that channel is the least "usual".</span></small></p>

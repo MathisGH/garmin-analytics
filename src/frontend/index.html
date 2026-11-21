@@ -2,37 +2,51 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Garmin Physiological Monitoring</title>
-    <style>
-        body { font-family: sans-serif; max-width: 700px; margin: 40px auto; }
-        .feature-card {
-            display: block;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 12px;
-            text-decoration: none;
-            color: inherit;
-        }
-        .feature-card:hover { background: #f5f5f5; }
-        .feature-card h2 { margin: 0 0 6px 0; }
-        .feature-card p { margin: 0; color: #555; }
-    </style>
+    <link rel="stylesheet" href="style.css">
+    <script src="theme.js"></script>
 </head>
 <body>
-    <h1>Garmin Physiological Monitoring</h1>
-    <p>A personal project turning Garmin watch data into physiological insights.</p>
+    <header class="site-header">
+        <div class="container nav">
+            <a class="brand" href="index.html">⌚ Garmin <span>Monitoring</span></a>
+            <nav class="nav-links">
+                <a href="index.html" class="active">Home</a>
+                <a href="anomaly.html">Anomalies</a>
+                <a href="sleep.html">Sleep</a>
+            </nav>
+        </div>
+    </header>
 
-    <a class="feature-card" href="anomaly.html">
-        <h2>Anomaly Explorer</h2>
-        <p>Compare daily physiological scores (Isolation Forest / Autoencoder) and visualize which metrics drive each anomaly.</p>
-    </a>
+    <main class="container">
+        <section class="hero">
+            <span class="eyebrow">Personal project</span>
+            <h1>What does my watch say about me?</h1>
+            <p class="lead">Turning my Garmin data into physiological insights: which days were unusual, and what shapes the way I sleep.</p>
+        </section>
 
-    <a class="feature-card" href="sleep.html">
-        <h2>Sleep Analysis</h2>
-        <p>Explore nightly sleep scores and stages, see which daily factors are associated with good or bad nights, and check how reliable the model really is.</p>
-    </a>
+        <div class="feature-grid">
+            <a class="feature-card" href="anomaly.html">
+                <div class="feature-icon">📈</div>
+                <h2>Anomaly Explorer</h2>
+                <p>Compare daily physiological scores and visualize which metrics make a day stand out from my usual routine.</p>
+                <div class="tags"><span class="tag">Isolation Forest</span><span class="tag">Autoencoder</span></div>
+                <span class="feature-cta">Explore days &rarr;</span>
+            </a>
 
-    <!-- Future features go here as additional feature-card links -->
+            <a class="feature-card" href="sleep.html">
+                <div class="feature-icon">🌙</div>
+                <h2>Sleep Analysis</h2>
+                <p>Explore nightly sleep scores and stages, see which daily factors go with good or bad nights, and check how reliable the model really is.</p>
+                <div class="tags"><span class="tag">Ridge regression</span><span class="tag">Sleep stages</span></div>
+                <span class="feature-cta">Explore nights &rarr;</span>
+            </a>
+
+            <!-- Future features go here as additional feature-card links -->
+        </div>
+    </main>
+
+    <footer class="site-footer">Built from my own Garmin watch data</footer>
 </body>
 </html>

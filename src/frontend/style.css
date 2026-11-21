@@ -1,0 +1,228 @@
+/* Garmin Physiological Monitoring - shared theme */
+:root {
+    --bg: #f7f5f1;
+    --surface: #ffffff;
+    --text: #1f2933;
+    --muted: #667085;
+    --border: #e8e3da;
+    --accent: #2a9d8f;
+    --accent-dark: #21867a;
+    --accent-soft: #e3f4f1;
+    --warn: #e9a23b;
+    --danger: #e63946;
+    --accent-text: #21867a;
+    --error: #b00020;
+    --chart-text: #667085;
+    --chart-grid: #ece8e1;
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    color-scheme: light;
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(31, 41, 51, 0.05), 0 4px 14px rgba(31, 41, 51, 0.05);
+}
+
+:root[data-theme="dark"] {
+    --bg: #14181d;
+    --surface: #1c2128;
+    --text: #e6e9ed;
+    --muted: #98a2b3;
+    --border: #2d343d;
+    --accent: #2a9d8f;
+    --accent-dark: #34b3a4;
+    --accent-soft: #17332f;
+    --accent-text: #6fd3c6;
+    --error: #ff7b86;
+    --chart-text: #98a2b3;
+    --chart-grid: #2d343d;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 14px rgba(0, 0, 0, 0.25);
+    color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    line-height: 1.55;
+}
+
+.container { max-width: 960px; margin: 0 auto; padding: 0 20px; }
+main.container { padding-top: 28px; padding-bottom: 64px; }
+
+/* ---------- Header / navigation ---------- */
+.site-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+.nav { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+.brand { font-weight: 700; color: var(--text); text-decoration: none; font-size: 1.05rem; }
+.brand span { color: var(--accent); }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a {
+    color: var(--muted);
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+.nav-links a:hover { background: var(--bg); color: var(--text); }
+.nav-links a.active { background: var(--accent-soft); color: var(--accent-text); }
+
+/* ---------- Typography ---------- */
+h1 { font-size: 2rem; line-height: 1.2; margin: 8px 0 8px 0; letter-spacing: -0.02em; }
+h2 { font-size: 1.25rem; margin: 0 0 12px 0; letter-spacing: -0.01em; }
+h3 { font-size: 1.05rem; margin: 22px 0 8px 0; }
+.muted { color: var(--muted); }
+.lead { color: var(--muted); font-size: 1.05rem; margin: 0 0 24px 0; max-width: 640px; }
+
+/* ---------- Panels & cards ---------- */
+.panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 22px;
+    margin-bottom: 22px;
+}
+.panel > h2 { display: flex; align-items: center; gap: 10px; }
+.step {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--accent-soft); color: var(--accent-text);
+    font-size: 0.85rem; font-weight: 700;
+}
+
+.card, .day-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin: 14px 0;
+    background: var(--surface);
+}
+
+.note {
+    background: var(--accent-soft);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin: 14px 0;
+    font-size: 0.95rem;
+}
+.note ul { margin: 8px 0 0 0; padding-left: 20px; }
+.note li { margin-bottom: 5px; }
+
+/* ---------- Home page ---------- */
+.hero { padding: 36px 0 20px 0; }
+.hero .eyebrow {
+    display: inline-block; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--accent-text);
+    background: var(--accent-soft); padding: 4px 12px; border-radius: 999px; margin-bottom: 12px;
+}
+.hero h1 { font-size: 2.4rem; }
+
+.feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; margin-top: 8px; }
+.feature-card {
+    display: flex; flex-direction: column; gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.feature-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+    box-shadow: 0 2px 4px rgba(31, 41, 51, 0.06), 0 12px 28px rgba(31, 41, 51, 0.1);
+}
+.feature-icon {
+    width: 48px; height: 48px; border-radius: 12px; background: var(--accent-soft);
+    display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+}
+.feature-card h2 { margin: 6px 0 0 0; }
+.feature-card p { margin: 0; color: var(--muted); font-size: 0.95rem; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.tag { font-size: 0.78rem; padding: 2px 10px; border-radius: 999px; background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+.feature-cta { margin-top: auto; padding-top: 10px; color: var(--accent-text); font-weight: 600; font-size: 0.95rem; }
+
+.site-footer { color: var(--muted); font-size: 0.85rem; text-align: center; padding: 32px 0 40px 0; }
+
+/* ---------- Controls ---------- */
+label { font-weight: 500; }
+select {
+    font: inherit;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    margin-bottom: 12px;
+}
+select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+select[multiple], select[size] { width: 100%; padding: 6px; }
+select option { padding: 6px 8px; border-radius: 6px; }
+#day-select { height: 220px; }
+#night-select { height: 220px; }
+
+.metric-checkboxes { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0 16px 0; }
+.metric-checkboxes strong { margin-right: 4px; }
+.metric-checkboxes label {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border: 1px solid var(--border); border-radius: 999px;
+    background: var(--surface); cursor: pointer; font-size: 0.92rem; font-weight: 500;
+}
+.metric-checkboxes label:has(input:checked) { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-text); }
+.metric-checkboxes input { accent-color: var(--accent); }
+
+button, .btn {
+    font: inherit; font-weight: 600;
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 10px;
+    padding: 10px 22px; cursor: pointer;
+    transition: background 0.15s ease;
+}
+button:hover { background: var(--accent-dark); }
+
+/* ---------- Theme toggle ---------- */
+.theme-toggle {
+    width: 36px; height: 36px; padding: 0; margin-left: 6px;
+    background: transparent; border: 1px solid var(--border); border-radius: 50%;
+    font-size: 1rem; line-height: 1; color: var(--text);
+}
+.theme-toggle:hover { background: var(--bg); }
+
+/* ---------- Charts ---------- */
+canvas { max-width: 100%; }
+.chart-box { position: relative; height: 420px; }
+
+/* ---------- Anomaly: badges & rank bar ---------- */
+.badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.82rem; font-weight: 700; color: #fff; }
+.badge-normal { background: #2a9d8f; }
+.badge-unusual { background: #e9a23b; }
+.badge-very { background: #e63946; }
+
+.rank-bar {
+    position: relative; height: 10px; border-radius: 5px; margin: 8px 0 2px 0;
+    background: linear-gradient(to right, #2a9d8f 0%, #2a9d8f 85%, #e9a23b 85%, #e9a23b 95%, #e63946 95%, #e63946 100%);
+}
+.rank-marker { position: absolute; top: -4px; width: 4px; height: 18px; background: var(--text); border-radius: 2px; transform: translateX(-2px); }
+.model-row { margin-top: 12px; }
+
+/* ---------- Sleep: stages ---------- */
+.stage-bar { display: flex; height: 22px; border-radius: 6px; overflow: hidden; margin: 10px 0; }
+.stage-legend span { margin-right: 16px; white-space: nowrap; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; }
+.error { color: var(--error); }
+
+@media (max-width: 600px) {
+    h1, .hero h1 { font-size: 1.7rem; }
+    .panel { padding: 16px; }
+    .nav-links a { padding: 6px 10px; }
+    .chart-box { height: 340px; }
+}

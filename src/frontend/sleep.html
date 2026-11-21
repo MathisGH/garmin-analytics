@@ -2,56 +2,62 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Garmin Sleep Analysis</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-    <style>
-        body { font-family: sans-serif; max-width: 900px; margin: 40px auto; }
-        a.back-link { display: inline-block; margin-bottom: 16px; }
-        h2 { margin-top: 44px; border-bottom: 1px solid #ddd; padding-bottom: 6px; }
-        h3 { margin: 24px 0 8px 0; }
-        select { margin-bottom: 12px; }
-        #night-select { width: 100%; height: 200px; }
-        .muted { color: #555; }
-        .note { background: #f7f7f7; border-left: 4px solid #bbb; padding: 10px 14px; margin: 12px 0; font-size: 0.95em; }
-        .card { border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin: 12px 0; }
-        .chart-box { position: relative; height: 420px; }
-        .stage-bar { display: flex; height: 22px; border-radius: 4px; overflow: hidden; margin: 8px 0; }
-        .stage-legend span { margin-right: 16px; white-space: nowrap; }
-        .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; }
-        .error { color: #b00020; }
-        canvas { max-width: 100%; }
-    </style>
+    <link rel="stylesheet" href="style.css">
+    <script src="theme.js"></script>
 </head>
 <body>
-    <a class="back-link" href="index.html">&larr; Back to home</a>
-    <h1>Garmin Sleep Analysis</h1>
-    <p class="muted" id="intro">Loading...</p>
-    <div id="load-error" class="error"></div>
+    <header class="site-header">
+        <div class="container nav">
+            <a class="brand" href="index.html">⌚ Garmin <span>Monitoring</span></a>
+            <nav class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="anomaly.html">Anomalies</a>
+                <a href="sleep.html" class="active">Sleep</a>
+            </nav>
+        </div>
+    </header>
 
-    <h2>1. Sleep score over time</h2>
-    <label for="period-select">Period:</label>
-    <select id="period-select">
-        <option value="15">Last 15 nights</option>
-        <option value="30">Last 30 nights</option>
-        <option value="90">Last 90 nights</option>
-        <option value="180">Last 180 nights</option>
-        <option value="365">Last 365 nights</option>
-        <option value="0">All nights</option>
-    </select>
-    <div class="chart-box" style="height: 320px;"><canvas id="overview-canvas"></canvas></div>
-    <div class="note">The dashed line is the model fitted on <em>all</em> nights (in-sample), so it looks better than what the model would really achieve on new nights.</div>
+    <main class="container">
+        <h1>Sleep Analysis</h1>
+        <p class="lead" id="intro">Loading...</p>
+        <div id="load-error" class="error"></div>
 
-    <h2>2. Night explorer</h2>
-    <label for="night-select">Select a night (date = the morning the night ends; most recent first):</label>
-    <select id="night-select" size="10"></select>
-    <div id="night-detail"></div>
+        <section class="panel">
+            <h2><span class="step">1</span> Sleep score over time</h2>
+            <label for="period-select">Period:</label>
+            <select id="period-select">
+                <option value="15">Last 15 nights</option>
+                <option value="30">Last 30 nights</option>
+                <option value="90">Last 90 nights</option>
+                <option value="180">Last 180 nights</option>
+                <option value="365">Last 365 nights</option>
+                <option value="0">All nights</option>
+            </select>
+            <div class="chart-box" style="height: 320px;"><canvas id="overview-canvas"></canvas></div>
+            <div class="note">The dashed line is the model fitted on <em>all</em> nights (in-sample), so it looks better than what the model would really achieve on new nights.</div>
+        </section>
 
-    <h2>3. Main factors (all nights)</h2>
-    <p class="muted">Standardized Ridge coefficients: change in predicted sleep score (points) for a one-standard-deviation increase of each factor measured the day before the night.</p>
-    <div class="chart-box"><canvas id="coef-canvas"></canvas></div>
+        <section class="panel">
+            <h2><span class="step">2</span> Night explorer</h2>
+            <label for="night-select">Select a night (date = the morning the night ends; most recent first):</label>
+            <select id="night-select" size="10"></select>
+            <div id="night-detail"></div>
+        </section>
 
-    <h2>Limits</h2>
-    <div class="note" id="limits"></div>
+        <section class="panel">
+            <h2><span class="step">3</span> Main factors (all nights)</h2>
+            <p class="muted">Standardized Ridge coefficients: change in predicted sleep score (points) for a one-standard-deviation increase of each factor measured the day before the night.</p>
+            <div class="chart-box"><canvas id="coef-canvas"></canvas></div>
+        </section>
+
+        <section class="panel">
+            <h2>Limits</h2>
+            <div class="note" id="limits" style="margin: 0;"></div>
+        </section>
+    </main>
 
     <script>
         const API_BASE = "https://738qk36avg.execute-api.eu-west-3.amazonaws.com";
@@ -73,7 +79,7 @@
         const label = key => FEATURE_LABELS[key] || key;
 
         const STAGES = [
-            { key: "deep_sleep_seconds", name: "Deep", color: "#264653" },
+            { key: "deep_sleep_seconds", name: "Deep", color: "#3d5a80" },
             { key: "light_sleep_seconds", name: "Light", color: "#457b9d" },
             { key: "rem_sleep_seconds", name: "REM", color: "#9b5de5" },
             { key: "awake_sleep_seconds", name: "Awake", color: "#f4a261" },
@@ -112,7 +118,7 @@
                         { label: "Actual sleep score", data: subset.map(n => n.sleep_score),
                           borderColor: "#457b9d", borderWidth: 1.5, pointRadius: 1.5 },
                         { label: "Model fit (in-sample)", data: subset.map(n => n.predicted_score),
-                          borderColor: "#e63946", borderWidth: 1.5, borderDash: [5, 4], pointRadius: 0 },
+                          borderColor: "#e76f51", borderWidth: 1.5, borderDash: [5, 4], pointRadius: 0 },
                     ],
                 },
                 options: {
@@ -147,6 +153,7 @@
                     datasets: [{
                         data: entries.map(([, value]) => value),
                         backgroundColor: entries.map(([, value]) => value >= 0 ? POSITIVE_COLOR : NEGATIVE_COLOR),
+                        borderRadius: 4,
                     }],
                 },
                 options: {
@@ -218,6 +225,7 @@
                     datasets: [{
                         data: coefs.map(c => c.coefficient),
                         backgroundColor: coefs.map(c => c.coefficient >= 0 ? POSITIVE_COLOR : NEGATIVE_COLOR),
+                        borderRadius: 4,
                     }],
                 },
                 options: {
